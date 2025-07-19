@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estação Meteorológica - EmbarcaTech</title>
+
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #1e3a5f;
+        }
+        h2 {
+            text-align: center;
+            color: black;
+        }
+        /* Grid para organizar os gráficos */
+        .charts-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+        /* Contêiner individual para cada gráfico */
+        .chart-container {
+            width: 100%;
+            max-width: 600px; /* Largura máxima de cada gráfico */
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        /* Garante que o canvas do gráfico preencha o contêiner */
+        .chart-container canvas {
+            width: 100% !important;
+            height: 300px !important;
+        }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+<body>
+
+    <h1>Estação Meteorológica - EmbarcaTech</h1>
+
+    <h2>AHT20</h2>
+    <div class="charts-grid">
+        <div class="chart-container">
+            <h2>Temperatura</h2>
+            <canvas id="AHT20_temperature"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Umidade</h2>
+            <canvas id="AHT20_humidity"></canvas>
+        </div>
+    </div>
+
+    
+    <h2>BMP280</h2>
+    <div class="charts-grid">
+        <div class="chart-container">
+            <h2>Pressão</h2>
+            <canvas id="BMP280_pressure"></canvas>
+        </div>
+
+        <div class="chart-container">
+            <h2>Temperatura</h2>
+            <canvas id="BMP280_temperature"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Função auxiliar para criar uma configuração padrão para os gráficos
+        function createChartConfig(label, r, g, b) {
+            return {
+                type: 'line', // Tipo de gráfico: linha
+                data: {
+                    labels: [], // Rótulos do eixo X (tempo)
+                    datasets: [{
+                        label: label,
+                        data: [], // Dados do eixo Y (valores do sensor)
+                        borderColor: `rgba(${r}, ${g}, ${b}, 1)`,
+                        backgroundColor: `rgba(${r}, ${g}, ${b}, 0.2)`,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4 // Deixa a linha mais suave
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Tempo'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Valor'
+                            },
+                            beginAtZero: false // O eixo Y não precisa começar em zero
+                        }
+                    },
+                    animation: {
+                        duration: 500 // Animação mais sutil
+                    }
+                }
+            };
+        }
+
+        // Pega o elemento <canvas> do HTML para cada gráfico
+        const ctx1_aht20 = document.getElementById('AHT20_temperature').getContext('2d');
+        const ctx2_aht20 = document.getElementById('AHT20_humidity').getContext('2d');
+        const ctx1_bmp280 = document.getElementById('BMP280_pressure').getContext('2d');
+        const ctx2_bmp280 = document.getElementById('BMP280_temperature').getContext('2d');
+
+        // Cria os objetos de gráfico usando a configuração
+        const chart1_aht20 = new Chart(ctx1_aht20, createChartConfig('Temperatura [Cº]', 255, 99, 132));
+        const chart2_aht20 = new Chart(ctx2_aht20, createChartConfig('Umidade [%]', 54, 162, 235));
+        const chart1_bmp280 = new Chart(ctx1_bmp280, createChartConfig('Pressão [hPa]', 75, 192, 192));
+        const chart2_bmp280 = new Chart(ctx2_bmp280, createChartConfig('Temperatura [Cº]', 255, 99, 132));
+
+        // Função que busca os dados no Pico W (AJAX)
+        async function fetchData() {
+                const response_bmp280 = await fetch('/bmp280');
+                const response_aht20 = await fetch('/aht20');
+
+                const bmp280_data = await response.json(); // Espera uma resposta em formato JSON
+
+                // Pega o horário atual para o eixo X
+                const timestamp = new Date().toLocaleTimeString('pt-BR');
+
+                // Adiciona os novos dados aos gráficos
+                addDataToChart(chart1_aht20, timestamp, data.sensor1);
+                addDataToChart(chart2_aht20, timestamp, data.sensor2);
+                addDataToChart(chart1_bmp280, timestamp, data.sensor3);
+                addDataToChart(chart2_bmp280, timestamp, data.sensor4);
+        }
+
+        // Função para adicionar dados e manter o gráfico com um tamanho máximo
+        function addDataToChart(chart, label, newData) {
+            const MAX_DATA_POINTS = 30; // Mostrar no máximo 30 pontos de dados
+
+            chart.data.labels.push(label);
+            chart.data.datasets[0].data.push(newData);
+
+            // Se o gráfico tiver muitos pontos, remove o mais antigo
+            if (chart.data.labels.length > MAX_DATA_POINTS) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+
+            // Atualiza o gráfico na tela
+            chart.update();
+        }
+
+        // Chama a função para buscar dados a cada 3 segundos (3000 milissegundos)
+        setInterval(fetchData, 3000);
+
+        // Busca os dados uma vez assim que a página carrega
+        fetchData();
+
+    </script>
+</body>
+</html>
