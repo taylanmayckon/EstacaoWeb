@@ -77,13 +77,6 @@ void ssd1306_pixel(ssd1306_t *ssd, uint8_t x, uint8_t y, bool value) {
     ssd->ram_buffer[index] &= ~(1 << pixel);
 }
 
-/*
-void ssd1306_fill(ssd1306_t *ssd, bool value) {
-  uint8_t byte = value ? 0xFF : 0x00;
-  for (uint8_t i = 1; i < ssd->bufsize; ++i)
-    ssd->ram_buffer[i] = byte;
-}*/
-
 void ssd1306_fill(ssd1306_t *ssd, bool value) {
     // Itera por todas as posições do display
     for (uint8_t y = 0; y < ssd->height; ++y) {
@@ -154,8 +147,7 @@ void ssd1306_vline(ssd1306_t *ssd, uint8_t x, uint8_t y0, uint8_t y1, bool value
 }
 
 // Função para desenhar um caractere
-void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y, bool inverse)
-{
+void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y, bool inverse){
   uint16_t index = 0;
   char ver=c;
   if (c >= 'A' && c <= 'Z')
@@ -215,23 +207,18 @@ void ssd1306_draw_char(ssd1306_t *ssd, char c, uint8_t x, uint8_t y, bool invers
         }
     }
   }
-  
 }
 
 // Função para desenhar uma string
-void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y, bool inverse)
-{
-  while (*str)
-  {
+void ssd1306_draw_string(ssd1306_t *ssd, const char *str, uint8_t x, uint8_t y, bool inverse){
+  while (*str){
     ssd1306_draw_char(ssd, *str++, x, y, inverse);
     x += 8;
-    if (x + 8 >= ssd->width)
-    {
+    if (x + 8 >= ssd->width){
       x = 0;
       y += 8;
     }
-    if (y + 8 >= ssd->height)
-    {
+    if (y + 8 >= ssd->height){
       break;
     }
   }

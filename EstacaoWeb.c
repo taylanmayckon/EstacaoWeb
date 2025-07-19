@@ -9,87 +9,108 @@
 #include <stdlib.h>
 #include "ssd1306.h"
 #include "font.h"
+#include "aht20.h"
+#include "bmp280.h"
 
+// Nome e senha da rede wi-fi
+#define WIFI_SSID ""
+#define WIFI_PASS ""
+
+// GPIO utilizada
 #define LED_PIN 12
 #define BOTAO_A 5
 #define BOTAO_JOY 22
 #define JOYSTICK_X 26
 #define JOYSTICK_Y 27
 
-#define WIFI_SSID "Seu SSID"
-#define WIFI_PASS "Sua Senha"
-
+// Configurações da I2C e sensores
 #define I2C_PORT_DISP i2c1
 #define I2C_SDA_DISP 14
 #define I2C_SCL_DISP 15
 #define endereco 0x3C
 
-const char HTML_BODY[] =
-    "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Controle do LED</title>"
-    "<style>"
-    "body { font-family: sans-serif; text-align: center; padding: 10px; margin: 0; background: #f9f9f9; }"
-    ".botao { font-size: 20px; padding: 10px 30px; margin: 10px; border: none; border-radius: 8px; }"
-    ".on { background: #4CAF50; color: white; }"
-    ".off { background: #f44336; color: white; }"
-    ".barra { width: 30%; background: #ddd; border-radius: 6px; overflow: hidden; margin: 0 auto 15px auto; height: 20px; }"
+static const char HTML_INDEX[] = 
+    "";
 
-    ".preenchimento { height: 100%; transition: width 0.3s ease; }"
-    "#barra_x { background: #2196F3; }"
-    "#barra_y { background:rgb(177, 96, 153); }"
-    ".label { font-weight: bold; margin-bottom: 5px; display: block; }"
-    ".bolinha { width: 20px; height: 20px; border-radius: 50%; display: inline-block; margin-left: 10px; background: #ccc; transition: background 0.3s ease; }"
-    "@media (max-width: 600px) { .botao { width: 80%; font-size: 18px; } }"
-    "</style>"
-    "<script>"
-    "function sendCommand(cmd) { fetch('/led/' + cmd); }"
-    "function atualizar() {"
-    "  fetch('/estado').then(res => res.json()).then(data => {"
-    "    document.getElementById('estado').innerText = data.led ? 'Ligado' : 'Desligado';"
-    "    document.getElementById('x_valor').innerText = data.x;"
-    "    document.getElementById('y_valor').innerText = data.y;"
-    "    document.getElementById('botao').innerText = data.botao ? 'Pressionado' : 'Solto';"
-    "    document.getElementById('joy').innerText = data.joy ? 'Pressionado' : 'Solto';"
-    "    document.getElementById('bolinha_a').style.background = data.botao ? '#2126F3' : '#ccc';"
-    "    document.getElementById('bolinha_joy').style.background = data.joy ? '#4C7F50' : '#ccc';"
-    "    document.getElementById('barra_x').style.width = Math.round(data.x / 4095 * 100) + '%';"
-    "    document.getElementById('barra_y').style.width = Math.round(data.y / 4095 * 100) + '%';"
-    "  });"
-    "}"
-    "setInterval(atualizar, 1000);"
-    "</script></head><body>"
+static const char HTML_BMP280[] = 
+    "";
 
-    "<h1>Controle do LED</h1>"
+static const char HTML_AHT20[] = 
+    "";
 
-    "<p>Estado do LED: <span id='estado'>--</span></p>"
+static const char HTML_BODY[] =
+    "<!DOCTYPE html>\n"
+    "<html lang=\"pt-br\">\n"
+    "<head>\n"
+    "<meta charset=\"UTF-8\">\n"
+    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
+    "<title>DogAtmos</title>\n"
+    "<style>\n"
+    "body{font-family:sans-serif;background-color:#f0f2f5;text-align:center;padding:15px;}\n"
+    "h1{color:#1e3a5f;margin-top:0;} h2{font-size:1.2em;margin-bottom:5px;border-bottom:1px solid #ddd;padding-bottom:5px;}\n"
+    ".container{max-width:400px;margin:0 auto;}\n"
+    ".sensor-block{background-color:#fff;padding:15px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);}\n"
+    ".data-p{font-size:1.4em;margin:10px 0;} .data-p span{color:#007bff;font-weight:bold;}\n"
+    ".alert-span{font-weight:bold;} .alert-ok{color:green;} .alert-triggered{color:red;}\n"
+    "input{width:90%;padding:8px;margin-top:5px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;}\n"
+    "label{font-size:0.9em;}\n"
+    ".chart-container{width:100%;margin-top:10px;margin-bottom:10px;}\n"
+    "</style>\n"
+    "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n"
+    "</head>\n"
+    "<body>\n"
+    "<div class=\"container\">\n"
+    "<h1>DogAtmos - EmbarcaTech</h1>\n"
+    "<div class=\"sensor-block\">\n"
+    "<h2>AHT20 - Temperatura</h2>\n"
+    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_AHT20_temperature\">--</span> &deg;C</p>\n"
+    "<div class=\"chart-container\"><canvas id=\"AHT20_temperature_chart\"></canvas></div>\n"
+    "<label>Limites:</label> <input type=\"number\" id=\"min_AHT20_temperature\" placeholder=\"Min\"> <input type=\"number\" id=\"max_AHT20_temperature\" placeholder=\"Max\"><br>\n"
+    "Status: <span class=\"alert-span alert-ok\" id=\"alert_AHT20_temperature\">NORMAL</span>\n"
+    "</div>\n"
+    "<div class=\"sensor-block\">\n"
+    "<h2>AHT20 - Umidade</h2>\n"
+    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_AHT20_humidity\">--</span> %</p>\n"
+    "<div class=\"chart-container\"><canvas id=\"AHT20_humidity_chart\"></canvas></div>\n"
+    "<label>Limites:</label> <input type=\"number\" id=\"min_AHT20_humidity\" placeholder=\"Min\"> <input type=\"number\" id=\"max_AHT20_humidity\" placeholder=\"Max\"><br>\n"
+    "Status: <span class=\"alert-span alert-ok\" id=\"alert_AHT20_humidity\">NORMAL</span>\n"
+    "</div>\n"
+    "<div class=\"sensor-block\">\n"
+    "<h2>BMP280 - Pressão</h2>\n"
+    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_BMP280_pressure\">--</span> hPa</p>\n"
+    "<div class=\"chart-container\"><canvas id=\"BMP280_pressure_chart\"></canvas></div>\n"
+    "<label>Limites:</label> <input type=\"number\" id=\"min_BMP280_pressure\" placeholder=\"Min\"> <input type=\"number\" id=\"max_BMP280_pressure\" placeholder=\"Max\"><br>\n"
+    "Status: <span class=\"alert-span alert-ok\" id=\"alert_BMP280_pressure\">NORMAL</span>\n"
+    "</div>\n"
+    "<div class=\"sensor-block\">\n"
+    "<h2>BMP280 - Temperatura</h2>\n"
+    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_BMP280_temperature\">--</span> &deg;C</p>\n"
+    "<div class=\"chart-container\"><canvas id=\"BMP280_temperature_chart\"></canvas></div>\n"
+    "<label>Limites:</label> <input type=\"number\" id=\"min_BMP280_temperature\" placeholder=\"Min\"> <input type=\"number\" id=\"max_BMP280_temperature\" placeholder=\"Max\"><br>\n"
+    "Status: <span class=\"alert-span alert-ok\" id=\"alert_BMP280_temperature\">NORMAL</span>\n"
+    "</div>\n"
+    "</div>\n"
+    "<script>\n"
+    "function createChartConfig(l,u,r,g,b){return{type:'line',data:{labels:[],datasets:[{label:l,data:[],borderColor:`rgba(${r},${g},${b},1)`,backgroundColor:`rgba(${r},${g},${b},.2)`,borderWidth:2,fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:false}},y:{title:{display:false}}},plugins:{legend:{display:false}},animation:{duration:500}}}}\n"
+    "const charts={AHT20_temperature:new Chart(document.getElementById('AHT20_temperature_chart').getContext('2d'),createChartConfig('Temp','°C',255,99,132)),AHT20_humidity:new Chart(document.getElementById('AHT20_humidity_chart').getContext('2d'),createChartConfig('Umid','%',54,162,235)),BMP280_pressure:new Chart(document.getElementById('BMP280_pressure_chart').getContext('2d'),createChartConfig('Press','hPa',75,192,192)),BMP280_temperature:new Chart(document.getElementById('BMP280_temperature_chart').getContext('2d'),createChartConfig('Temp','°C',255,159,64))};\n"
+    "const MAX_DATA_POINTS=15;\n"
+    "function updateData(){fetch('/dados.json').then(r=>r.json()).then(d=>{const t=new Date().toLocaleTimeString('pt-BR');for(const s in d){const v=d[s];document.getElementById(`current_${s}`).textContent=v.toFixed(2);updateChart(charts[s],t,v);checkAlerts(s,v)}}).catch(e=>console.error('Erro:',e));}\n"
+    "function updateChart(c,l,d){c.data.labels.push(l);c.data.datasets.forEach(s=>{s.data.push(d)});if(c.data.labels.length>MAX_DATA_POINTS){c.data.labels.shift();c.data.datasets.forEach(s=>{s.data.shift()})}c.update('none');}\n"
+    "function checkAlerts(i,v){const min=document.getElementById(`min_${i}`).value,max=document.getElementById(`max_${i}`).value,a=document.getElementById(`alert_${i}`);let t=!1;(max&&v>parseFloat(max))&&(t=!0);(min&&v<parseFloat(min))&&(t=!0);a.textContent=t?'ALERTA!':'NORMAL';a.className=`alert-span ${t?'alert-triggered':'alert-ok}`};"
+    "async function sendConfig(baseId){const minVal=document.getElementById(`min_${baseId}`).value;const maxVal=document.getElementById(`max_${baseId}`).value;const config={sensor:baseId,min:parseFloat(minVal),max:parseFloat(maxVal)};await fetch('/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)});}\n"
+    "document.addEventListener('DOMContentLoaded',()=>{updateData();setInterval(updateData,2500);document.querySelectorAll('input').forEach(i=>{i.addEventListener('change',e=>{const baseId=e.target.id.split('_').slice(1).join('_');sendConfig(baseId)})})});\n"
+    "</script>\n"
+    "</body>\n"
+    "</html>";
 
-    "<p class='label'>Joystick X: <span id='x_valor'>--</span></p>"
-    "<div class='barra'><div id='barra_x' class='preenchimento'></div></div>"
-
-    "<p class='label'>Joystick Y: <span id='y_valor'>--</span></p>"
-    "<div class='barra'><div id='barra_y' class='preenchimento'></div></div>"
-
-    "<p class='label'>Botão A: <span id='botao'>--</span> <span id='bolinha_a' class='bolinha'></span></p>"
-    "<p class='label'>Botão do Joystick: <span id='joy'>--</span> <span id='bolinha_joy' class='bolinha'></span></p>"
-
-    "<button class='botao on' onclick=\"sendCommand('on')\">Ligar</button>"
-    "<button class='botao off' onclick=\"sendCommand('off')\">Desligar</button>"
-
-    "<hr style='margin-top: 20px;'>"
-    "<p style='font-size: 15px; color: #336699; font-style: italic; max-width: 90%; margin: 10px auto;'>"
-    "Utilização da BitDogLab para exemplificar a comunicação via rede Wi-Fi utilizando o protocolo HTML com JavaScript"
-    "</p>"
-
-    "</body></html>";
-
-struct http_state
-{
-    char response[4096];
+struct http_state{
+    char response[4096*2];
     size_t len;
     size_t sent;
 };
 
-static err_t http_sent(void *arg, struct tcp_pcb *tpcb, u16_t len)
-{
+
+static err_t http_sent(void *arg, struct tcp_pcb *tpcb, u16_t len){
     struct http_state *hs = (struct http_state *)arg;
     hs->sent += len;
     if (hs->sent >= hs->len)
@@ -100,26 +121,22 @@ static err_t http_sent(void *arg, struct tcp_pcb *tpcb, u16_t len)
     return ERR_OK;
 }
 
-static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err)
-{
-    if (!p)
-    {
+static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err){
+    if (!p){
         tcp_close(tpcb);
         return ERR_OK;
     }
 
     char *req = (char *)p->payload;
     struct http_state *hs = malloc(sizeof(struct http_state));
-    if (!hs)
-    {
+    if (!hs){
         pbuf_free(p);
         tcp_close(tpcb);
         return ERR_MEM;
     }
     hs->sent = 0;
 
-    if (strstr(req, "GET /led/on"))
-    {
+    if (strstr(req, "GET /led/on")){
         gpio_put(LED_PIN, 1);
         const char *txt = "Ligado";
         hs->len = snprintf(hs->response, sizeof(hs->response),
@@ -131,8 +148,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                            "%s",
                            (int)strlen(txt), txt);
     }
-    else if (strstr(req, "GET /led/off"))
-    {
+    else if (strstr(req, "GET /led/off")){
         gpio_put(LED_PIN, 0);
         const char *txt = "Desligado";
         hs->len = snprintf(hs->response, sizeof(hs->response),
@@ -144,8 +160,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                            "%s",
                            (int)strlen(txt), txt);
     }
-    else if (strstr(req, "GET /estado"))
-    {
+    else if (strstr(req, "GET /estado")){
         adc_select_input(0);
         uint16_t x = adc_read();
         adc_select_input(1);
@@ -169,8 +184,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                            "%s",
                            json_len, json_payload);
     }
-    else
-    {
+    else{
         hs->len = snprintf(hs->response, sizeof(hs->response),
                            "HTTP/1.1 200 OK\r\n"
                            "Content-Type: text/html\r\n"
@@ -191,22 +205,20 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
     return ERR_OK;
 }
 
-static err_t connection_callback(void *arg, struct tcp_pcb *newpcb, err_t err)
-{
+
+static err_t connection_callback(void *arg, struct tcp_pcb *newpcb, err_t err){
     tcp_recv(newpcb, http_recv);
     return ERR_OK;
 }
 
-static void start_http_server(void)
-{
+
+static void start_http_server(void){
     struct tcp_pcb *pcb = tcp_new();
-    if (!pcb)
-    {
+    if (!pcb){
         printf("Erro ao criar PCB TCP\n");
         return;
     }
-    if (tcp_bind(pcb, IP_ADDR_ANY, 80) != ERR_OK)
-    {
+    if (tcp_bind(pcb, IP_ADDR_ANY, 80) != ERR_OK){
         printf("Erro ao ligar o servidor na porta 80\n");
         return;
     }
@@ -231,10 +243,6 @@ int main(){
     gpio_set_dir(BOTAO_JOY, GPIO_IN);
     gpio_pull_up(BOTAO_JOY);
 
-    adc_init();
-    adc_gpio_init(JOYSTICK_X);
-    adc_gpio_init(JOYSTICK_Y);
-
     i2c_init(I2C_PORT_DISP, 400 * 1000);
     gpio_set_function(I2C_SDA_DISP, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL_DISP, GPIO_FUNC_I2C);
@@ -249,19 +257,17 @@ int main(){
     ssd1306_draw_string(&ssd, "Aguarde...", 0, 30, false);    
     ssd1306_send_data(&ssd);
 
-    if (cyw43_arch_init())
-    {
+    if (cyw43_arch_init()){
         ssd1306_fill(&ssd, false);
-        ssd1306_draw_string(&ssd, "WiFi => FALHA", 0, 0, false);
+        ssd1306_draw_string(&ssd, "WiFi -> FALHA", 0, 0, false);
         ssd1306_send_data(&ssd);
         return 1;
     }
 
     cyw43_arch_enable_sta_mode();
-    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 10000))
-    {
+    if (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASS, CYW43_AUTH_WPA2_AES_PSK, 10000)){
         ssd1306_fill(&ssd, false);
-        ssd1306_draw_string(&ssd, "WiFi => ERRO", 0, 0, false);
+        ssd1306_draw_string(&ssd, "WiFi -> ERRO", 0, 0, false);
         ssd1306_send_data(&ssd);
         return 1;
     }
@@ -271,7 +277,7 @@ int main(){
     snprintf(ip_str, sizeof(ip_str), "%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
 
     ssd1306_fill(&ssd, false);
-    ssd1306_draw_string(&ssd, "WiFi => OK", 0, 0, false);
+    ssd1306_draw_string(&ssd, "WiFi -> OK", 0, 0, false);
     ssd1306_draw_string(&ssd, ip_str, 0, 10, false);
     ssd1306_send_data(&ssd);
 
@@ -279,35 +285,8 @@ int main(){
     char str_x[5]; // Buffer para armazenar a string
     char str_y[5]; // Buffer para armazenar a string
     bool cor = true;
-    while (true)
-    {
+    while (true){
         cyw43_arch_poll();
-
-        // Leitura dos valores analógicos
-        adc_select_input(0);
-        uint16_t adc_value_x = adc_read();
-        adc_select_input(1);
-        uint16_t adc_value_y = adc_read();
-
-        sprintf(str_x, "%d", adc_value_x);            // Converte o inteiro em string
-        sprintf(str_y, "%d", adc_value_y);            // Converte o inteiro em string
-        ssd1306_fill(&ssd, !cor);                     // Limpa o display
-        ssd1306_rect(&ssd, 3, 3, 122, 60, cor, !cor); // Desenha um retângulo
-        ssd1306_line(&ssd, 3, 25, 123, 25, cor);      // Desenha uma linha
-        ssd1306_line(&ssd, 3, 37, 123, 37, cor);      // Desenha uma linha
-
-        ssd1306_draw_string(&ssd, "CEPEDI   TIC37", 8, 6, false); // Desenha uma string
-        ssd1306_draw_string(&ssd, "EMBARCATECH", 20, 16, false);  // Desenha uma string
-        ssd1306_draw_string(&ssd, ip_str, 10, 28, false);
-        ssd1306_draw_string(&ssd, "X    Y    PB", 20, 41, false);           // Desenha uma string
-        ssd1306_line(&ssd, 44, 37, 44, 60, cor);                     // Desenha uma linha vertical
-        ssd1306_draw_string(&ssd, str_x, 8, 52, false);                     // Desenha uma string
-        ssd1306_line(&ssd, 84, 37, 84, 60, cor);                     // Desenha uma linha vertical
-        ssd1306_draw_string(&ssd, str_y, 49, 52, false);                    // Desenha uma string
-        ssd1306_rect(&ssd, 52, 90, 8, 8, cor, !gpio_get(BOTAO_JOY)); // Desenha um retângulo
-        ssd1306_rect(&ssd, 52, 102, 8, 8, cor, !gpio_get(BOTAO_A));  // Desenha um retângulo
-        ssd1306_rect(&ssd, 52, 114, 8, 8, cor, !cor);                // Desenha um retângulo
-        ssd1306_send_data(&ssd);                                     // Atualiza o display
 
         sleep_ms(300);
     }

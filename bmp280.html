@@ -15,34 +15,29 @@
         }
         h1 {
             text-align: center;
-            color: #1e3a5f;
-            margin-bottom: 30px;
-        }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-        }
-        hr {
-            border: 0;
-            height: 1px;
-            background-color: #ddd;
-            margin: 40px 0;
         }
 
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        .buttons-row {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button-style {
+            font-size: 20px; 
+            padding: 10px 30px; 
+            margin: 10px; 
+            border: none; 
+            border-radius: 8px; 
+            background: #4CAF50; 
+            color: white;
         }
 
         .sensor-row {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            justify-content: center;
-            gap: 20px;
             margin-bottom: 20px;
             padding: 20px;
             background-color: #ffffff;
@@ -126,42 +121,16 @@
 
     <h1>DogAtmos - EmbarcaTech</h1>
 
-    <div class="main-content">
+    <div class="buttons-row">
+        <button class="button-style" onclick="window.location.href='/bmp280'">
+            BMP280
+        </button>
+        <button class="button-style" onclick="window.location.href='/aht20'">
+            AHT20
+        </button>
+    </div>
 
-        <div class="sensor-row">
-            <div class="chart-container">
-                <h2>AHT20 - Temperatura</h2>
-                <canvas id="AHT20_temperature_chart"></canvas>
-            </div>
-            <div class="sensor-info">
-                <div class="info-item"><p>Valor Atual: <span id="current_AHT20_temperature">--</span> °C</p></div>
-                <div class="input-group"><label for="min_AHT20_temperature">Limite Mínimo:</label><input type="number" id="min_AHT20_temperature" placeholder="Ex: 10"></div>
-                <div class="input-group"><label for="max_AHT20_temperature">Limite Máximo:</label><input type="number" id="max_AHT20_temperature" placeholder="Ex: 30"></div>
-                <div class="input-group"><label for="offset_AHT20_temperature">Offset de Calibração:</label><input type="number" id="offset_AHT20_temperature" value="0"></div>
-                <div class="alert-status-container">
-                    <label>Status do Alerta:</label>
-                    <div id="alert_AHT20_temperature" class="alert-indicator">NORMAL</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="sensor-row">
-            <div class="chart-container">
-                <h2>AHT20 - Humidade</h2>
-                <canvas id="AHT20_humidity_chart"></canvas>
-            </div>
-            <div class="sensor-info">
-                <div class="info-item"><p>Valor Atual: <span id="current_AHT20_humidity">--</span> %</p></div>
-                <div class="input-group"><label for="min_AHT20_humidity">Limite Mínimo:</label><input type="number" id="min_AHT20_humidity" placeholder="Ex: 40"></div>
-                <div class="input-group"><label for="max_AHT20_humidity">Limite Máximo:</label><input type="number" id="max_AHT20_humidity" placeholder="Ex: 70"></div>
-                <div class="input-group"><label for="offset_AHT20_humidity">Offset de Calibração:</label><input type="number" id="offset_AHT20_humidity" value="0"></div>
-                <div class="alert-status-container">
-                    <label>Status do Alerta:</label>
-                    <div id="alert_AHT20_humidity" class="alert-indicator">NORMAL</div>
-                </div>
-            </div>
-        </div>
-        
+    <div class="main-content">        
         <hr>
 
         <div class="sensor-row">
@@ -197,12 +166,6 @@
                 </div>
             </div>
         </div>
-
-        <hr style='margin-top: 20px;'>
-
-        <h3>Desenvolvido por: Taylan Mayckon</h3>
-        <p>Atividade da Fase 2 do EmbarcaTech, envolvendo uso dos sensores BMP280 e AHT20 para criar uma estação meteorológica com interface WEB.</p>
-
     </div>
 
     <script>
@@ -234,8 +197,6 @@
         }
 
         const charts = {
-            AHT20_temperature: new Chart(document.getElementById('AHT20_temperature_chart').getContext('2d'), createChartConfig('Temperatura', '°C', 255, 99, 132)),
-            AHT20_humidity: new Chart(document.getElementById('AHT20_humidity_chart').getContext('2d'), createChartConfig('Umidade', '%', 54, 162, 235)),
             BMP280_pressure: new Chart(document.getElementById('BMP280_pressure_chart').getContext('2d'), createChartConfig('Pressão', 'hPa', 75, 192, 192)),
             BMP280_temperature: new Chart(document.getElementById('BMP280_temperature_chart').getContext('2d'), createChartConfig('Temperatura', '°C', 255, 159, 64))
         };
@@ -245,8 +206,6 @@
             
             // Substituir pelo fetch('/dados.json') real
             const data = {
-                AHT20_temperature: 25 + (Math.random() * 10 - 3), 
-                AHT20_humidity: 60 + (Math.random() * 20 - 10),
                 BMP280_pressure: 1012 + (Math.random() * 15 - 7.5),
                 BMP280_temperature: 26 + (Math.random() * 10 - 3)
             };
