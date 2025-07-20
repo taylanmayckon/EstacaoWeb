@@ -29,82 +29,63 @@
 #define I2C_SCL_DISP 15
 #define endereco 0x3C
 
-static const char HTML_INDEX[] = 
-    "";
+const char HTML_BODY[] =
+    "<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'>"
+    "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
+    "<title>DogAtmos - EmbarcaTech</title>"
 
-static const char HTML_BMP280[] = 
-    "";
+    "<style>"
+    "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;background-color:#f0f2f5;color:#333}"
+    "h1{text-align:center;color:#1e3a5f;margin-bottom:30px}"
+    "h2{margin-top:0;color:#333;border-bottom:2px solid #e0e0e0;padding-bottom:5px;margin-bottom:15px}"
+    ".main-content{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:20px}"
+    ".sensor-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;padding:20px;background-color:#fff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.05)}"
+    ".chart-container{flex:2;min-width:300px;max-width:700px}"
+    ".chart-container canvas{width:100%!important;height:300px!important}"
+    ".sensor-info{flex:1;min-width:250px;display:flex;flex-direction:column;gap:15px}"
+    ".info-item,.input-group,.alert-status-container{background-color:#f8f9fa;padding:10px 15px;border-radius:6px;border:1px solid #e9ecef}"
+    ".info-item p{margin:0;font-size:1.2em;font-weight:500}"
+    ".info-item span{font-weight:400;color:#007bff}"
+    ".input-group label,.alert-status-container label{display:block;margin-bottom:5px;font-weight:500}"
+    ".input-group input{width:100%;padding:8px;border:1px solid #ced4da;border-radius:4px;box-sizing:border-box}"
+    ".alert-indicator{padding:10px;border-radius:8px;text-align:center;font-weight:bold;color:#fff;background-color:#4CAF50;transition:background-color .3s ease,opacity .3s ease}"
+    ".alert-indicator.triggered{background-color:#f44336;animation:blink 1.2s infinite ease-in-out}"
+    "@keyframes blink{50%{opacity:.7}}"
+    "</style>"
 
-static const char HTML_AHT20[] = 
-    "";
+    "<script src='https://cdn.jsdelivr.net/npm/chart.js'></script></head>"
 
-static const char HTML_BODY[] =
-    "<!DOCTYPE html>\n"
-    "<html lang=\"pt-br\">\n"
-    "<head>\n"
-    "<meta charset=\"UTF-8\">\n"
-    "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n"
-    "<title>DogAtmos</title>\n"
-    "<style>\n"
-    "body{font-family:sans-serif;background-color:#f0f2f5;text-align:center;padding:15px;}\n"
-    "h1{color:#1e3a5f;margin-top:0;} h2{font-size:1.2em;margin-bottom:5px;border-bottom:1px solid #ddd;padding-bottom:5px;}\n"
-    ".container{max-width:400px;margin:0 auto;}\n"
-    ".sensor-block{background-color:#fff;padding:15px;margin-bottom:15px;border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.1);}\n"
-    ".data-p{font-size:1.4em;margin:10px 0;} .data-p span{color:#007bff;font-weight:bold;}\n"
-    ".alert-span{font-weight:bold;} .alert-ok{color:green;} .alert-triggered{color:red;}\n"
-    "input{width:90%;padding:8px;margin-top:5px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;}\n"
-    "label{font-size:0.9em;}\n"
-    ".chart-container{width:100%;margin-top:10px;margin-bottom:10px;}\n"
-    "</style>\n"
-    "<script src=\"https://cdn.jsdelivr.net/npm/chart.js\"></script>\n"
-    "</head>\n"
-    "<body>\n"
-    "<div class=\"container\">\n"
-    "<h1>DogAtmos - EmbarcaTech</h1>\n"
-    "<div class=\"sensor-block\">\n"
-    "<h2>AHT20 - Temperatura</h2>\n"
-    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_AHT20_temperature\">--</span> &deg;C</p>\n"
-    "<div class=\"chart-container\"><canvas id=\"AHT20_temperature_chart\"></canvas></div>\n"
-    "<label>Limites:</label> <input type=\"number\" id=\"min_AHT20_temperature\" placeholder=\"Min\"> <input type=\"number\" id=\"max_AHT20_temperature\" placeholder=\"Max\"><br>\n"
-    "Status: <span class=\"alert-span alert-ok\" id=\"alert_AHT20_temperature\">NORMAL</span>\n"
-    "</div>\n"
-    "<div class=\"sensor-block\">\n"
-    "<h2>AHT20 - Umidade</h2>\n"
-    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_AHT20_humidity\">--</span> %</p>\n"
-    "<div class=\"chart-container\"><canvas id=\"AHT20_humidity_chart\"></canvas></div>\n"
-    "<label>Limites:</label> <input type=\"number\" id=\"min_AHT20_humidity\" placeholder=\"Min\"> <input type=\"number\" id=\"max_AHT20_humidity\" placeholder=\"Max\"><br>\n"
-    "Status: <span class=\"alert-span alert-ok\" id=\"alert_AHT20_humidity\">NORMAL</span>\n"
-    "</div>\n"
-    "<div class=\"sensor-block\">\n"
-    "<h2>BMP280 - Pressão</h2>\n"
-    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_BMP280_pressure\">--</span> hPa</p>\n"
-    "<div class=\"chart-container\"><canvas id=\"BMP280_pressure_chart\"></canvas></div>\n"
-    "<label>Limites:</label> <input type=\"number\" id=\"min_BMP280_pressure\" placeholder=\"Min\"> <input type=\"number\" id=\"max_BMP280_pressure\" placeholder=\"Max\"><br>\n"
-    "Status: <span class=\"alert-span alert-ok\" id=\"alert_BMP280_pressure\">NORMAL</span>\n"
-    "</div>\n"
-    "<div class=\"sensor-block\">\n"
-    "<h2>BMP280 - Temperatura</h2>\n"
-    "<p class=\"data-p\">Atual: <span class=\"data-value\" id=\"current_BMP280_temperature\">--</span> &deg;C</p>\n"
-    "<div class=\"chart-container\"><canvas id=\"BMP280_temperature_chart\"></canvas></div>\n"
-    "<label>Limites:</label> <input type=\"number\" id=\"min_BMP280_temperature\" placeholder=\"Min\"> <input type=\"number\" id=\"max_BMP280_temperature\" placeholder=\"Max\"><br>\n"
-    "Status: <span class=\"alert-span alert-ok\" id=\"alert_BMP280_temperature\">NORMAL</span>\n"
-    "</div>\n"
-    "</div>\n"
-    "<script>\n"
-    "function createChartConfig(l,u,r,g,b){return{type:'line',data:{labels:[],datasets:[{label:l,data:[],borderColor:`rgba(${r},${g},${b},1)`,backgroundColor:`rgba(${r},${g},${b},.2)`,borderWidth:2,fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{title:{display:false}},y:{title:{display:false}}},plugins:{legend:{display:false}},animation:{duration:500}}}}\n"
-    "const charts={AHT20_temperature:new Chart(document.getElementById('AHT20_temperature_chart').getContext('2d'),createChartConfig('Temp','°C',255,99,132)),AHT20_humidity:new Chart(document.getElementById('AHT20_humidity_chart').getContext('2d'),createChartConfig('Umid','%',54,162,235)),BMP280_pressure:new Chart(document.getElementById('BMP280_pressure_chart').getContext('2d'),createChartConfig('Press','hPa',75,192,192)),BMP280_temperature:new Chart(document.getElementById('BMP280_temperature_chart').getContext('2d'),createChartConfig('Temp','°C',255,159,64))};\n"
-    "const MAX_DATA_POINTS=15;\n"
-    "function updateData(){fetch('/dados.json').then(r=>r.json()).then(d=>{const t=new Date().toLocaleTimeString('pt-BR');for(const s in d){const v=d[s];document.getElementById(`current_${s}`).textContent=v.toFixed(2);updateChart(charts[s],t,v);checkAlerts(s,v)}}).catch(e=>console.error('Erro:',e));}\n"
-    "function updateChart(c,l,d){c.data.labels.push(l);c.data.datasets.forEach(s=>{s.data.push(d)});if(c.data.labels.length>MAX_DATA_POINTS){c.data.labels.shift();c.data.datasets.forEach(s=>{s.data.shift()})}c.update('none');}\n"
-    "function checkAlerts(i,v){const min=document.getElementById(`min_${i}`).value,max=document.getElementById(`max_${i}`).value,a=document.getElementById(`alert_${i}`);let t=!1;(max&&v>parseFloat(max))&&(t=!0);(min&&v<parseFloat(min))&&(t=!0);a.textContent=t?'ALERTA!':'NORMAL';a.className=`alert-span ${t?'alert-triggered':'alert-ok}`};"
-    "async function sendConfig(baseId){const minVal=document.getElementById(`min_${baseId}`).value;const maxVal=document.getElementById(`max_${baseId}`).value;const config={sensor:baseId,min:parseFloat(minVal),max:parseFloat(maxVal)};await fetch('/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(config)});}\n"
-    "document.addEventListener('DOMContentLoaded',()=>{updateData();setInterval(updateData,2500);document.querySelectorAll('input').forEach(i=>{i.addEventListener('change',e=>{const baseId=e.target.id.split('_').slice(1).join('_');sendConfig(baseId)})})});\n"
-    "</script>\n"
-    "</body>\n"
-    "</html>";
+    "<body><h1>DogAtmos - EmbarcaTech</h1>"
+    "<div id='main-content' class='main-content'></div>"
+    "<div style='text-align:center;max-width:1200px;margin:40px auto 20px;'>"
+    "<hr style='border:0;height:1px;background-color:#ddd;'>"
+    "<h3>Desenvolvido por: Taylan Mayckon</h3>"
+    "<p>Atividade da Fase 2 do EmbarcaTech, envolvendo uso dos sensores BMP280 e AHT20 para criar uma estação meteorológica com interface WEB.</p>"
+    "</div>"
+ 
+    "<script>"
+    "const sensorConfig=[{id:'AHT20_temperature',sensorName:'AHT20',label:'Temperatura',unit:'°C',color:[255,99,132],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'},{id:'AHT20_humidity',sensorName:'AHT20',label:'Umidade',unit:'%',color:[54,162,235],placeholderMin:'Ex: 40',placeholderMax:'Ex: 70'},{id:'BMP280_pressure',sensorName:'BMP280',label:'Pressão',unit:'hPa',color:[75,192,192],placeholderMin:'Ex: 1000',placeholderMax:'Ex: 1020'},{id:'BMP280_temperature',sensorName:'BMP280',label:'Temperatura',unit:'°C',color:[255,159,64],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'}];"
+    "const charts={};const MAX_DATA_POINTS=30;"
+    "function initializeDashboard(){const e=document.getElementById('main-content');sensorConfig.forEach(function(t){var a=\""
+    "<div class='sensor-row'><div class='chart-container'><h2>\"+t.sensorName+\" - \"+t.label+\"</h2><canvas id='\"+t.id+\"_chart'></canvas></div>"
+    "<div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+t.id+\"'>--</span> \"+t.unit+\"</p></div>"
+    "<div class='input-group'><label for='min_\"+t.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+t.id+\"' placeholder='\"+t.placeholderMin+\"'></div>"
+    "<div class='input-group'><label for='max_\"+t.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+t.id+\"' placeholder='\"+t.placeholderMax+\"'></div>"
+    "<div class='input-group'><label for='offset_\"+t.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+t.id+\"' value='0'></div>"
+    "<div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+t.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>"
+    "\";e.insertAdjacentHTML('beforeend',a);var n=t.color[0],l=t.color[1],o=t.color[2];charts[t.id]=new Chart(document.getElementById(t.id+'_chart').getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:t.label,data:[],borderColor:'rgba('+n+','+l+','+o+',1)',backgroundColor:'rgba('+n+','+l+','+o+',0.2)',borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:t.label+' ['+t.unit+']'},beginAtZero:!1}},animation:{duration:500}}})})}"
+    "function updateData(){fetch('/data').then(e=>e.json()).then(e=>{const t=(new Date).toLocaleTimeString('pt-BR');sensorConfig.forEach(function(a){const n=e[a.id];if(void 0!==n){const e=document.getElementById('offset_'+a.id),l=parseFloat(e.value)||0,o=n+l;document.getElementById('current_'+a.id).textContent=o.toFixed(2),addDataToChart(charts[a.id],t,o),checkAlerts(a.id,o)}})}).catch(e=>console.error('Error fetching sensor data:',e))}"
+    "function checkAlerts(e,t){const a=document.getElementById('min_'+e),n=document.getElementById('max_'+e),l=document.getElementById('alert_'+e),o=parseFloat(a.value),r=parseFloat(n.value);let c=!isNaN(o)&&t<o||!isNaN(r)&&t>r;l.classList.toggle('triggered',c),l.textContent=c?'ALERTA!':'NORMAL'}"
+    "function addDataToChart(e,t,a){e.data.labels.push(t),e.data.datasets[0].data.push(a),e.data.labels.length>MAX_DATA_POINTS&&(e.data.labels.shift(),e.data.datasets[0].data.shift()),e.update('none')}"
+    "initializeDashboard();setInterval(updateData,2000);"
+    "</script>"
+    "</body></html>";
+
+
+
 
 struct http_state{
-    char response[4096*2];
+    char response[10000];
     size_t len;
     size_t sent;
 };
@@ -184,16 +165,44 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                            "%s",
                            json_len, json_payload);
     }
-    else{
+    else if (strstr(req, "GET /data")) { // <-- NOVA ROTA ADICIONADA AQUI
+        // 1. LEIA OS SENSORES AQUI (Exemplo, você precisa implementar isso)
+        float temperatura = 25.5; // Substituir por aht20_get_temp();
+        float umidade = 60.2;     // Substituir por aht20_get_humi();
+
+        // 2. VERIFIQUE OS ALERTAS (Exemplo de lógica)
+        const char* temp_alert_status = "off"; // Mude para "on" se o alerta disparar
+        const char* humi_alert_status = "off"; // Mude para "on" se o alerta disparar
+
+        // 3. CRIE O PACOTE JSON
+        char json_payload[200];
+        int json_len = snprintf(json_payload, sizeof(json_payload),
+                                "{\"aht_temp\":\"%.2f\",\"aht_humi\":\"%.2f\",\"aht_temp_a\":\"%s\",\"aht_humi_a\":\"%s\"}",
+                                temperatura, umidade, temp_alert_status, humi_alert_status);
+
+        // 4. MONTE A RESPOSTA HTTP COM O JSON
         hs->len = snprintf(hs->response, sizeof(hs->response),
-                           "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: text/html\r\n"
-                           "Content-Length: %d\r\n"
-                           "Connection: close\r\n"
-                           "\r\n"
-                           "%s",
-                           (int)strlen(HTML_BODY), HTML_BODY);
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Type: application/json\r\n"
+                        "Content-Length: %d\r\n"
+                        "Connection: close\r\n"
+                        "\r\n"
+                        "%s",
+                        json_len, json_payload);
     }
+
+    else { // Rota padrão que envia o HTML
+        hs->len = snprintf(hs->response, sizeof(hs->response),
+                        "HTTP/1.1 200 OK\r\n"
+                        "Content-Type: text/html\r\n"
+                        "Content-Length: %d\r\n"
+                        "Connection: close\r\n"
+                        "\r\n"
+                        "%s",
+                        (int)strlen(HTML_BODY), HTML_BODY);
+    }
+
+    
 
     tcp_arg(tpcb, hs);
     tcp_sent(tpcb, http_sent);
