@@ -165,33 +165,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                            "%s",
                            json_len, json_payload);
     }
-    else if (strstr(req, "GET /data")) { // <-- NOVA ROTA ADICIONADA AQUI
-        // 1. LEIA OS SENSORES AQUI (Exemplo, você precisa implementar isso)
-        float temperatura = 25.5; // Substituir por aht20_get_temp();
-        float umidade = 60.2;     // Substituir por aht20_get_humi();
-
-        // 2. VERIFIQUE OS ALERTAS (Exemplo de lógica)
-        const char* temp_alert_status = "off"; // Mude para "on" se o alerta disparar
-        const char* humi_alert_status = "off"; // Mude para "on" se o alerta disparar
-
-        // 3. CRIE O PACOTE JSON
-        char json_payload[200];
-        int json_len = snprintf(json_payload, sizeof(json_payload),
-                                "{\"aht_temp\":\"%.2f\",\"aht_humi\":\"%.2f\",\"aht_temp_a\":\"%s\",\"aht_humi_a\":\"%s\"}",
-                                temperatura, umidade, temp_alert_status, humi_alert_status);
-
-        // 4. MONTE A RESPOSTA HTTP COM O JSON
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: application/json\r\n"
-                        "Content-Length: %d\r\n"
-                        "Connection: close\r\n"
-                        "\r\n"
-                        "%s",
-                        json_len, json_payload);
-    }
-
-    else { // Rota padrão que envia o HTML
+    else { 
         hs->len = snprintf(hs->response, sizeof(hs->response),
                         "HTTP/1.1 200 OK\r\n"
                         "Content-Type: text/html\r\n"

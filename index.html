@@ -93,28 +93,25 @@
         const sensorConfig = [
             {
                 id: 'AHT20_temperature', sensorName: 'AHT20', label: 'Temperatura', unit: '°C',
-                color: [255, 99, 132], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30',
-                mockData: () => 25 + (Math.random() * 10 - 3)
+                color: [255, 99, 132], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30'
             },
             {
                 id: 'AHT20_humidity', sensorName: 'AHT20', label: 'Umidade', unit: '%',
-                color: [54, 162, 235], placeholderMin: 'Ex: 40', placeholderMax: 'Ex: 70',
-                mockData: () => 60 + (Math.random() * 20 - 10)
+                color: [54, 162, 235], placeholderMin: 'Ex: 40', placeholderMax: 'Ex: 70'
             },
             {
                 id: 'BMP280_pressure', sensorName: 'BMP280', label: 'Pressão', unit: 'hPa',
-                color: [75, 192, 192], placeholderMin: 'Ex: 1000', placeholderMax: 'Ex: 1020',
-                mockData: () => 1012 + (Math.random() * 15 - 7.5)
+                color: [75, 192, 192], placeholderMin: 'Ex: 1000', placeholderMax: 'Ex: 1020'
             },
             {
                 id: 'BMP280_temperature', sensorName: 'BMP280', label: 'Temperatura', unit: '°C',
-                color: [255, 159, 64], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30',
-                mockData: () => 26 + (Math.random() * 10 - 3)
+                color: [255, 159, 64], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30'
             }
         ];
 
         const charts = {};
-        const MAX_DATA_POINTS = 30;
+        const MAX_DATA_POINTS = 50;
+        const fetchInterval = 2000;
 
         function initializeDashboard() {
             const container = document.getElementById('main-content');
@@ -168,32 +165,42 @@
             });
         }
 
-        function updateData() {
+        function sendInputs(){
+            // Função para enviar os inputs do usuário para a BitDogLab
+        }
+
+        function updateData(){
             const timestamp = new Date().toLocaleTimeString('pt-BR');
+            // Aparentemente tá certo
+            fetch('/data').then(res => res.json()).then(data => {
+                aht20_temperature = data.aht20_temperature;
+                aht20_humidity = data.aht20_humidity;
+                bmp280_pressure = data.bmp280_pressure;
+                bmp280_temperature = data.bmp280_temperature;
+                checkAlerts('AHT20_temperature', data.aht20_temperature_alert);
+                checkAlerts('AHT20_humidity', data.aht20_humidity_alert);
+                checkAlerts('BMP280_pressure', data.bmp280_pressure_alert);
+                checkAlerts('BMP280_temperature', data.bmp280_temperature_alert);
+            });
             
+
             sensorConfig.forEach(sensor => {
                 const value = sensor.mockData(); 
                 
                 document.getElementById(`current_${sensor.id}`).textContent = value.toFixed(2);
                 addDataToChart(charts[sensor.id], timestamp, value);
-                checkAlerts(sensor.id, value);
             });
         }
 
-        function checkAlerts(sensorId, currentValue) {
-            const minInput = document.getElementById(`min_${sensorId}`);
-            const maxInput = document.getElementById(`max_${sensorId}`);
+        // Aparantemente tá certo
+        function checkAlerts(sensorId, currentStatus){
             const alertIndicator = document.getElementById(`alert_${sensorId}`);
-
-            const minLimit = parseFloat(minInput.value);
-            const maxLimit = parseFloat(maxInput.value);
-
-            let isAlertTriggered = (!isNaN(minLimit) && currentValue < minLimit) || (!isNaN(maxLimit) && currentValue > maxLimit);
-
+            let isAlertTriggered = (currentStatus === 'on');
             alertIndicator.classList.toggle('triggered', isAlertTriggered);
             alertIndicator.textContent = isAlertTriggered ? 'ALERTA!' : 'NORMAL';
         }
         
+        // Modifica para enviar 50 dados de uma vez, coloca para pegar a hora só do ultimo e fazer o desconto do intervalo para os demais
         function addDataToChart(chart, label, newData) {
             chart.data.labels.push(label);
             chart.data.datasets[0].data.push(newData);
@@ -206,7 +213,7 @@
 
         initializeDashboard();
         updateData(); 
-        setInterval(updateData, 2000);
+        setInterval(updateData, fetchInterval);
 
     </script>
 </body>
