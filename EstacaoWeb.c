@@ -53,6 +53,7 @@ BMP280_buffer_t BMP280_buffer;
 Payload_sizes_t payload_sizes;
 Sensor_alerts_t sensor_alerts = {false, false, false, false};
 char json_payload[1024]; 
+AlertParams_t alert_params;
 
 
 // Configurações para o PWM
@@ -167,8 +168,26 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                             "%s",
                             json_len, json_payload);
     }
-    else if(strstr(req, "GET /config")){
-
+    else if(strstr(req, "POST /config")){
+        char *read_data = strstr(req, "\r\n\r\n");
+        printf("[DEBUG] POST /config\n%s", read_data);
+        if(read_data){
+            read_data += 4;
+            int read_number = sscanf(read_data, "{\"AHT20_temperature\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
+                                                "\"AHT20_humidity\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
+                                                "\"BMP280_pressure\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
+                                                "\"BMP280_temperature\":{\"min\":%f,\"max\":%f,\"offset\":%f}}",
+                                                &alert_params.AHT20_temperature.min, &alert_params.AHT20_temperature.max, &alert_params.AHT20_temperature.offset,
+                                                &alert_params.AHT20_humidity.min, &alert_params.AHT20_humidity.max, &alert_params.AHT20_humidity.offset,
+                                                &alert_params.BMP280_pressure.min, &alert_params.BMP280_pressure.max, &alert_params.BMP280_pressure.offset,
+                                                &alert_params.BMP280_temperature.min, &alert_params.BMP280_temperature.max, &alert_params.BMP280_temperature.offset);
+            if(read_number==12){
+                printf("\n[DEBUG] POST /config concluido com sucesso!\n");
+            }
+            else{
+                printf("\n[DEBUG] Erro na requisição de POST /config!\n");
+            }
+        }
     }
     else { 
         hs->len = snprintf(hs->response, sizeof(hs->response),
@@ -274,8 +293,25 @@ int main(){
     ssd1306_draw_string(&ssd, ip_str, 0, 10, false);
     ssd1306_send_data(&ssd);
 
-    // Iniciando os buffers do payload
+    // Iniciando os buffers dos payloads
     payload_buffers_init(&AHT20_buffer, &BMP280_buffer);
+
+    // Criando a configuração inicial dos alertas
+    alert_params.AHT20_humidity.max = 80.0;
+    alert_params.AHT20_humidity.min = 30.0;
+    alert_params.AHT20_humidity.offset = 0.0;
+
+    alert_params.AHT20_temperature.max = 40.0;
+    alert_params.AHT20_temperature.min = 0.0;
+    alert_params.AHT20_temperature.offset = 0.0;
+
+    alert_params.BMP280_pressure.max = 110.0;
+    alert_params.BMP280_pressure.min = 90.0;
+    alert_params.BMP280_pressure.offset = 0.0;
+
+    alert_params.BMP280_temperature.max = 40.0;
+    alert_params.BMP280_temperature.min = 0.0;
+    alert_params.BMP280_temperature.offset = 0.0;
 
     start_http_server();
 
