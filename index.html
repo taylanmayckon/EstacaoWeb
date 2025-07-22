@@ -110,7 +110,6 @@
         ];
 
         const charts = {};
-        const MAX_DATA_POINTS = 50;
         const fetchInterval = 2000;
 
         function initializeDashboard() {
@@ -170,51 +169,40 @@
         }
 
         function updateData(){
-            const timestamp = new Date().toLocaleTimeString('pt-BR');
-            // Aparentemente tá certo
             fetch('/data').then(res => res.json()).then(data => {
-                aht20_temperature = data.aht20_temperature;
-                aht20_humidity = data.aht20_humidity;
-                bmp280_pressure = data.bmp280_pressure;
-                bmp280_temperature = data.bmp280_temperature;
-                checkAlerts('AHT20_temperature', data.aht20_temperature_alert);
-                checkAlerts('AHT20_humidity', data.aht20_humidity_alert);
-                checkAlerts('BMP280_pressure', data.bmp280_pressure_alert);
-                checkAlerts('BMP280_temperature', data.bmp280_temperature_alert);
-            });
-            
-
-            sensorConfig.forEach(sensor => {
-                const value = sensor.mockData(); 
-                
-                document.getElementById(`current_${sensor.id}`).textContent = value.toFixed(2);
-                addDataToChart(charts[sensor.id], timestamp, value);
+                const timestamp = new Date();
+                sensorConfig.forEach(sensor => {
+                    const dataArray = data[sensor.id];
+                    const alertStatus = data[`alert_${sensor.id}`];
+                    updateCharts(charts[sensor.id], timestamp, dataArray);
+                    document.getElementById(`current_${sensor.id}`).textContent = dataArray.at(-1).toFixed(2);
+                    checkAlerts(sensor.id, alertStatus);
+                })
             });
         }
 
-        // Aparantemente tá certo
         function checkAlerts(sensorId, currentStatus){
             const alertIndicator = document.getElementById(`alert_${sensorId}`);
             let isAlertTriggered = (currentStatus === 'on');
             alertIndicator.classList.toggle('triggered', isAlertTriggered);
             alertIndicator.textContent = isAlertTriggered ? 'ALERTA!' : 'NORMAL';
         }
-        
-        // Modifica para enviar 50 dados de uma vez, coloca para pegar a hora só do ultimo e fazer o desconto do intervalo para os demais
-        function addDataToChart(chart, label, newData) {
-            chart.data.labels.push(label);
-            chart.data.datasets[0].data.push(newData);
-            if (chart.data.labels.length > MAX_DATA_POINTS) {
-                chart.data.labels.shift();
-                chart.data.datasets[0].data.shift();
+
+        function updateCharts(chart, lastTimestamp, newDataArray) {
+            const newLabels = [];
+            const dataLength = newDataArray.length;
+            for (let i = 0; i < dataLength; i++) {
+                const pointTimestamp = new Date(lastTimestamp.getTime() - (dataLength - 1 - i) * fetchInterval);
+                newLabels.push(pointTimestamp.toLocaleTimeString('pt-BR'));
             }
+            chart.data.labels = newLabels;
+            chart.data.datasets[0].data = newDataArray;
             chart.update('none');
         }
 
         initializeDashboard();
         updateData(); 
         setInterval(updateData, fetchInterval);
-
     </script>
 </body>
 </html>

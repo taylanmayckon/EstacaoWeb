@@ -1,6 +1,9 @@
 #ifndef AHT20_H
 #define AHT20_H
 
+#include <stdbool.h>
+#include "hardware/i2c.h"
+
 
 // Endereço I2C do AHT20
 #define AHT20_I2C_ADDR  0x38
@@ -14,13 +17,13 @@
 typedef struct {
     float temperature;
     float humidity;
-} AHT20_Data;
+} AHT20_data_t;
 
 // Inicializa o sensor AHT20
 bool aht20_init(i2c_inst_t *i2c);
 
 // Faz a leitura de temperatura e umidade do AHT20
-bool aht20_read(i2c_inst_t *i2c, AHT20_Data *data);
+bool aht20_read(i2c_inst_t *i2c, AHT20_data_t *data);
 
 // Reseta o sensor AHT20
 void aht20_reset(i2c_inst_t *i2c);

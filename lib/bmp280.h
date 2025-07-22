@@ -61,6 +61,11 @@ struct bmp280_calib_param {
     int16_t dig_p9;
 };
 
+typedef struct {
+    float temperature;
+    float pressure;
+} BMP280_data_t;
+
 //void bmp280_init(void);
 void bmp280_init(i2c_inst_t *i2c);
 void bmp280_read_raw(i2c_inst_t *i2c, int32_t* temp, int32_t* pressure);

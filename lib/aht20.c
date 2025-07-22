@@ -28,7 +28,7 @@ bool aht20_init(i2c_inst_t *i2c) {
     return false;  // Falhou na calibração
 }
 
-bool aht20_read(i2c_inst_t *i2c, AHT20_Data *data) {
+bool aht20_read(i2c_inst_t *i2c, AHT20_data_t *data) {
     uint8_t trigger_cmd[3] = {AHT20_CMD_TRIGGER, 0x33, 0x00};
     uint8_t buffer[6];
 

@@ -11,23 +11,47 @@
 #include "font.h"
 #include "aht20.h"
 #include "bmp280.h"
+#include "payload.h"
 
 // Nome e senha da rede wi-fi
-#define WIFI_SSID ""
-#define WIFI_PASS ""
+#define WIFI_SSID "Infornet_Taylan"
+#define WIFI_PASS "suta3021"
 
 // GPIO utilizada
-#define LED_PIN 12
-#define BOTAO_A 5
-#define BOTAO_JOY 22
-#define JOYSTICK_X 26
-#define JOYSTICK_Y 27
+#define LED_RED 13
+#define LED_GREEN 11
+#define LED_BLUE 12 
+#define BUTTON_A 5
+#define BUTTON_B 6
+#define JOYSTICK_BUTTON 22
+#define LED_MATRIX_PIN 7
 
-// Configurações da I2C e sensores
+// Configurações da I2C do display
 #define I2C_PORT_DISP i2c1
 #define I2C_SDA_DISP 14
 #define I2C_SCL_DISP 15
 #define endereco 0x3C
+bool cor = true;
+
+// Configurações da I2C dos sensores
+#define I2C_PORT i2c0
+#define I2C_SDA 0
+#define I2C_SCL 1
+#define SEA_LEVEL_PRESSURE 101325.0 // Pressão ao nível do mar em Pa
+
+// Estrutura para armazenar os dados dos sensores
+// Dados individuais
+AHT20_data_t AHT20_data;
+BMP280_data_t BMP280_data;
+int32_t raw_temp_bmp;
+int32_t raw_pressure;
+// Buffers para os gráficos
+AHT20_buffer_t AHT20_buffer;
+BMP280_buffer_t BMP280_buffer;
+
+// Configurações para o PWM
+uint wrap = 2000;
+uint clkdiv = 25;
 
 const char HTML_BODY[] =
     "<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'>"
@@ -117,53 +141,11 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
     }
     hs->sent = 0;
 
-    if (strstr(req, "GET /led/on")){
-        gpio_put(LED_PIN, 1);
-        const char *txt = "Ligado";
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                           "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: text/plain\r\n"
-                           "Content-Length: %d\r\n"
-                           "Connection: close\r\n"
-                           "\r\n"
-                           "%s",
-                           (int)strlen(txt), txt);
+    if (strstr(req, "GET /data")){
+       
     }
-    else if (strstr(req, "GET /led/off")){
-        gpio_put(LED_PIN, 0);
-        const char *txt = "Desligado";
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                           "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: text/plain\r\n"
-                           "Content-Length: %d\r\n"
-                           "Connection: close\r\n"
-                           "\r\n"
-                           "%s",
-                           (int)strlen(txt), txt);
-    }
-    else if (strstr(req, "GET /estado")){
-        adc_select_input(0);
-        uint16_t x = adc_read();
-        adc_select_input(1);
-        uint16_t y = adc_read();
-        int botao = !gpio_get(BOTAO_A);
-        int joy = !gpio_get(BOTAO_JOY);
+    else if(strstr(req, "GET /config")){
 
-        char json_payload[96];
-        int json_len = snprintf(json_payload, sizeof(json_payload),
-                                "{\"led\":%d,\"x\":%d,\"y\":%d,\"botao\":%d,\"joy\":%d}\r\n",
-                                gpio_get(LED_PIN), x, y, botao, joy);
-
-        printf("[DEBUG] JSON: %s\n", json_payload);
-
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                           "HTTP/1.1 200 OK\r\n"
-                           "Content-Type: application/json\r\n"
-                           "Content-Length: %d\r\n"
-                           "Connection: close\r\n"
-                           "\r\n"
-                           "%s",
-                           json_len, json_payload);
     }
     else { 
         hs->len = snprintf(hs->response, sizeof(hs->response),
@@ -175,8 +157,6 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
                         "%s",
                         (int)strlen(HTML_BODY), HTML_BODY);
     }
-
-    
 
     tcp_arg(tpcb, hs);
     tcp_sent(tpcb, http_sent);
@@ -215,17 +195,23 @@ int main(){
     stdio_init_all();
     sleep_ms(2000);
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    // Iniciando o I2C dos sensores
+    i2c_init(I2C_PORT_DISP, 400 * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
 
-    gpio_init(BOTAO_A);
-    gpio_set_dir(BOTAO_A, GPIO_IN);
-    gpio_pull_up(BOTAO_A);
+    // Inicializando o BMP280
+    bmp280_init(I2C_PORT);
+    struct bmp280_calib_param params;
+    bmp280_get_calib_params(I2C_PORT, &params);
 
-    gpio_init(BOTAO_JOY);
-    gpio_set_dir(BOTAO_JOY, GPIO_IN);
-    gpio_pull_up(BOTAO_JOY);
+    // Inicializando o AHT20
+    aht20_reset(I2C_PORT);
+    aht20_init(I2C_PORT);
 
+    // Iniciando o display
     i2c_init(I2C_PORT_DISP, 400 * 1000);
     gpio_set_function(I2C_SDA_DISP, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL_DISP, GPIO_FUNC_I2C);
@@ -240,6 +226,7 @@ int main(){
     ssd1306_draw_string(&ssd, "Aguarde...", 0, 30, false);    
     ssd1306_send_data(&ssd);
 
+    // Iniciando Wi-Fi
     if (cyw43_arch_init()){
         ssd1306_fill(&ssd, false);
         ssd1306_draw_string(&ssd, "WiFi -> FALHA", 0, 0, false);
@@ -265,9 +252,7 @@ int main(){
     ssd1306_send_data(&ssd);
 
     start_http_server();
-    char str_x[5]; // Buffer para armazenar a string
-    char str_y[5]; // Buffer para armazenar a string
-    bool cor = true;
+
     while (true){
         cyw43_arch_poll();
 
