@@ -513,7 +513,7 @@ int main(){
                 make_alert_display(sensor_alerts.aht20_temperature, 4 + 8*8, 28);
                 // Offset atual
                 ssd1306_draw_string(&ssd, "OFFSET: ", 4, 38, false);
-                ssd1306_draw_string(&ssd, str_tmp_aht, 4 + 8*8, 38, false);
+                ssd1306_draw_string(&ssd, str_offset_tmp_aht, 4 + 8*8, 38, false);
                 // Indicação inferior
                 ssd1306_rect(&ssd, 51, 0, 128, 12, cor, cor); // Fundo preenchido
                 ssd1306_draw_string(&ssd, "AHT-TEMPERATURA", 4, 53, true);
