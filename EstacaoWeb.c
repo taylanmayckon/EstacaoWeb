@@ -69,7 +69,7 @@ const char HTML_BODY[] =
     "h1{text-align:center;color:#1e3a5f;margin-bottom:30px}"
     "h2{margin-top:0;color:#333;border-bottom:2px solid #e0e0e0;padding-bottom:5px;margin-bottom:15px}"
     ".main-content{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:20px}"
-    ".sensor-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;padding:20px;background-color:#fff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,.05)}"
+    ".sensor-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:20px;padding:20px;background-color:#ffffff;border-radius:8px;box-shadow:0 4px 6px rgba(0,0,0,0.05)}"
     ".chart-container{flex:2;min-width:300px;max-width:700px}"
     ".chart-container canvas{width:100%!important;height:300px!important}"
     ".sensor-info{flex:1;min-width:250px;display:flex;flex-direction:column;gap:15px}"
@@ -78,9 +78,9 @@ const char HTML_BODY[] =
     ".info-item span{font-weight:400;color:#007bff}"
     ".input-group label,.alert-status-container label{display:block;margin-bottom:5px;font-weight:500}"
     ".input-group input{width:100%;padding:8px;border:1px solid #ced4da;border-radius:4px;box-sizing:border-box}"
-    ".alert-indicator{padding:10px;border-radius:8px;text-align:center;font-weight:bold;color:#fff;background-color:#4CAF50;transition:background-color .3s ease,opacity .3s ease}"
+    ".alert-indicator{padding:10px;border-radius:8px;text-align:center;font-weight:bold;color:white;background-color:#4CAF50;transition:background-color 0.3s ease,opacity 0.3s ease}"
     ".alert-indicator.triggered{background-color:#f44336;animation:blink 1.2s infinite ease-in-out}"
-    "@keyframes blink{50%{opacity:.7}}"
+    "@keyframes blink{50%{opacity:0.7}}"
     "</style>"
 
     "<script src='https://cdn.jsdelivr.net/npm/chart.js'></script></head>"
@@ -92,22 +92,23 @@ const char HTML_BODY[] =
     "<h3>Desenvolvido por: Taylan Mayckon</h3>"
     "<p>Atividade da Fase 2 do EmbarcaTech, envolvendo uso dos sensores BMP280 e AHT20 para criar uma estação meteorológica com interface WEB.</p>"
     "</div>"
- 
+
     "<script>"
     "const sensorConfig=[{id:'AHT20_temperature',sensorName:'AHT20',label:'Temperatura',unit:'°C',color:[255,99,132],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'},{id:'AHT20_humidity',sensorName:'AHT20',label:'Umidade',unit:'%',color:[54,162,235],placeholderMin:'Ex: 40',placeholderMax:'Ex: 70'},{id:'BMP280_pressure',sensorName:'BMP280',label:'Pressão',unit:'hPa',color:[75,192,192],placeholderMin:'Ex: 1000',placeholderMax:'Ex: 1020'},{id:'BMP280_temperature',sensorName:'BMP280',label:'Temperatura',unit:'°C',color:[255,159,64],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'}];"
-    "const charts={};const MAX_DATA_POINTS=30;"
-    "function initializeDashboard(){const e=document.getElementById('main-content');sensorConfig.forEach(function(t){var a=\""
-    "<div class='sensor-row'><div class='chart-container'><h2>\"+t.sensorName+\" - \"+t.label+\"</h2><canvas id='\"+t.id+\"_chart'></canvas></div>"
-    "<div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+t.id+\"'>--</span> \"+t.unit+\"</p></div>"
-    "<div class='input-group'><label for='min_\"+t.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+t.id+\"' placeholder='\"+t.placeholderMin+\"'></div>"
-    "<div class='input-group'><label for='max_\"+t.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+t.id+\"' placeholder='\"+t.placeholderMax+\"'></div>"
-    "<div class='input-group'><label for='offset_\"+t.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+t.id+\"' value='0'></div>"
-    "<div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+t.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>"
-    "\";e.insertAdjacentHTML('beforeend',a);var n=t.color[0],l=t.color[1],o=t.color[2];charts[t.id]=new Chart(document.getElementById(t.id+'_chart').getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:t.label,data:[],borderColor:'rgba('+n+','+l+','+o+',1)',backgroundColor:'rgba('+n+','+l+','+o+',0.2)',borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:t.label+' ['+t.unit+']'},beginAtZero:!1}},animation:{duration:500}}})})}"
-    "function updateData(){fetch('/data').then(e=>e.json()).then(e=>{const t=(new Date).toLocaleTimeString('pt-BR');sensorConfig.forEach(function(a){const n=e[a.id];if(void 0!==n){const e=document.getElementById('offset_'+a.id),l=parseFloat(e.value)||0,o=n+l;document.getElementById('current_'+a.id).textContent=o.toFixed(2),addDataToChart(charts[a.id],t,o),checkAlerts(a.id,o)}})}).catch(e=>console.error('Error fetching sensor data:',e))}"
-    "function checkAlerts(e,t){const a=document.getElementById('min_'+e),n=document.getElementById('max_'+e),l=document.getElementById('alert_'+e),o=parseFloat(a.value),r=parseFloat(n.value);let c=!isNaN(o)&&t<o||!isNaN(r)&&t>r;l.classList.toggle('triggered',c),l.textContent=c?'ALERTA!':'NORMAL'}"
-    "function addDataToChart(e,t,a){e.data.labels.push(t),e.data.datasets[0].data.push(a),e.data.labels.length>MAX_DATA_POINTS&&(e.data.labels.shift(),e.data.datasets[0].data.shift()),e.update('none')}"
-    "initializeDashboard();setInterval(updateData,2000);"
+    "const charts={};const fetchInterval=2000;"
+    "function initializeDashboard(){const t=document.getElementById('main-content');sensorConfig.forEach(e=>{const n=\""
+    "<div class='sensor-row'><div class='chart-container'><h2>\"+e.sensorName+\" - \"+e.label+\"</h2><canvas id='\"+e.id+\"_chart'></canvas></div>"
+    "<div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+e.id+\"'>--</span> \"+e.unit+\"</p></div>"
+    "<div class='input-group'><label for='min_\"+e.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+e.id+\"' placeholder='\"+e.placeholderMin+\"'></div>"
+    "<div class='input-group'><label for='max_\"+e.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+e.id+\"' placeholder='\"+e.placeholderMax+\"'></div>"
+    "<div class='input-group'><label for='offset_\"+e.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+e.id+\"' value='0'></div>"
+    "<div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+e.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>"
+    "\";t.insertAdjacentHTML('beforeend',n);const[o,a,r]=e.color;charts[e.id]=new Chart(document.getElementById(e.id+'_chart').getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:e.label,data:[],borderColor:'rgba('+o+','+a+','+r+',1)',backgroundColor:'rgba('+o+','+a+','+r+',0.2)',borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:e.label+' ['+e.unit+']'},beginAtZero:!1}},animation:{duration:500}}})})}"
+    "function sendInputs(){}"
+    "function updateData(){fetch('/data').then(e=>e.json()).then(e=>{const t=new Date;sensorConfig.forEach(o=>{const n=e[o.id],a=e['alert_'+o.id];updateCharts(charts[o.id],t,n),document.getElementById('current_'+o.id).textContent=parseFloat(n.at(-1)).toFixed(2),checkAlerts(o.id,a)})})}"
+    "function checkAlerts(e,t){const o=document.getElementById('alert_'+e);let n='on'===t;o.classList.toggle('triggered',n),o.textContent=n?'ALERTA!':'NORMAL'}"
+    "function updateCharts(e,t,o){const n=[];const a=o.length;for(let r=0;r<a;r++){const s=new Date(t.getTime()-(a-1-r)*fetchInterval);n.push(s.toLocaleTimeString('pt-BR'))}e.data.labels=n,e.data.datasets[0].data=o,e.update('none')}"
+    "initializeDashboard();updateData();setInterval(updateData,fetchInterval);"
     "</script>"
     "</body></html>";
 
@@ -147,8 +148,32 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
     }
     hs->sent = 0;
 
+    // Dados atuais dos dois sensores
     if (strstr(req, "GET /data")){
-       
+       // Atualizando o payload
+        payload_sizes.json_size = sizeof(json_payload);
+        payload_sizes.aht20_humi_size = sizeof(AHT20_buffer.humidity);
+        payload_sizes.aht20_temp_size = sizeof(AHT20_buffer.temperature);
+        payload_sizes.bmp280_press_size = sizeof(BMP280_buffer.pressure);
+        payload_sizes.bmp280_temp_size = sizeof(BMP280_buffer.temperature);
+        int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
+
+        // Debug 
+        if (json_len > 0 && json_len < sizeof(json_payload)) {
+            printf("JSON gerado com sucesso (%d bytes):\n", json_len);
+            printf("%s\n", json_payload);
+        } else {
+            printf("Erro ao gerar o JSON: buffer pequeno demais!\n");
+        }
+
+        hs->len = snprintf(hs->response, sizeof(hs->response),
+                            "HTTP/1.1 200 OK\r\n"
+                            "Content-Type: application/json\r\n"
+                            "Content-Length: %d\r\n"
+                            "Connection: close\r\n"
+                            "\r\n"
+                            "%s",
+                            json_len, json_payload);
     }
     else if(strstr(req, "GET /config")){
 
@@ -265,20 +290,7 @@ int main(){
     while (true){
         cyw43_arch_poll();
 
-        // Atualizando o payload
-        payload_sizes.json_size = sizeof(json_payload);
-        payload_sizes.aht20_humi_size = sizeof(AHT20_buffer.humidity);
-        payload_sizes.aht20_temp_size = sizeof(AHT20_buffer.temperature);
-        payload_sizes.bmp280_press_size = sizeof(BMP280_buffer.pressure);
-        payload_sizes.bmp280_temp_size = sizeof(BMP280_buffer.temperature);
-        int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
-
-        if (json_len > 0 && json_len < sizeof(json_payload)) {
-            printf("JSON gerado com sucesso (%d bytes):\n", json_len);
-            printf("%s\n", json_payload);
-        } else {
-            printf("Erro ao gerar o JSON: buffer pequeno demais!\n");
-        }
+        
 
         sleep_ms(300);
     }

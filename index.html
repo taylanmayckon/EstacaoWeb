@@ -175,7 +175,7 @@
                     const dataArray = data[sensor.id];
                     const alertStatus = data[`alert_${sensor.id}`];
                     updateCharts(charts[sensor.id], timestamp, dataArray);
-                    document.getElementById(`current_${sensor.id}`).textContent = dataArray.at(-1).toFixed(2);
+                    document.getElementById(`current_${sensor.id}`).textContent = parseFloat(dataArray.at(-1)).toFixed(2);
                     checkAlerts(sensor.id, alertStatus);
                 })
             });
