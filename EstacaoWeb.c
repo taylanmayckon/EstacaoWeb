@@ -4,11 +4,13 @@
 #include "hardware/i2c.h"
 #include "hardware/adc.h"
 #include "hardware/gpio.h"
+#include "hardware/pwm.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "ssd1306.h"
 #include "font.h"
+#include "led_matrix.h"
 #include "aht20.h"
 #include "bmp280.h"
 #include "payload.h"
@@ -26,6 +28,8 @@
 #define BUTTON_B 6
 #define JOYSTICK_BUTTON 22
 #define LED_MATRIX_PIN 7
+#define BUZZER_A 21
+#define BUZZER_B 10
 
 // Configurações da I2C do display
 #define I2C_PORT_DISP i2c1
@@ -33,6 +37,7 @@
 #define I2C_SCL_DISP 15
 #define endereco 0x3C
 bool cor = true;
+ssd1306_t ssd;
 
 // Configurações da I2C dos sensores
 #define I2C_PORT i2c0
@@ -55,10 +60,13 @@ Sensor_alerts_t sensor_alerts = {false, false, false, false};
 char json_payload[1024]; 
 ConfigParams_t config_params;
 
-
 // Configurações para o PWM
 uint wrap = 2000;
 uint clkdiv = 25;
+
+// Variáveis da PIO declaradas no escopo global
+PIO pio;
+uint sm;
 
 const char HTML_BODY[] =
     "<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'>"
@@ -267,6 +275,53 @@ static void start_http_server(void){
     printf("Servidor HTTP rodando na porta 80...\n");
 }
 
+// -> Funções Auxiliares =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Função para configurar o PWM e iniciar com 0% de DC
+void set_pwm(uint gpio, uint wrap){
+    gpio_set_function(gpio, GPIO_FUNC_PWM);
+    uint slice_num = pwm_gpio_to_slice_num(gpio);
+    pwm_set_clkdiv(slice_num, clkdiv);
+    pwm_set_wrap(slice_num, wrap);
+    pwm_set_enabled(slice_num, true); 
+    pwm_set_gpio_level(gpio, 0);
+}
+
+// Função para imprimir uma exclamação nos alertas do display
+void make_alert_display(bool alert_flag, int x, int y){
+    if(alert_flag){
+        ssd1306_rect(&ssd, y, x, 26, 8, cor, !cor);
+        ssd1306_draw_string(&ssd, "!", x+8, y, !cor);
+    }
+    else{
+        ssd1306_draw_string(&ssd, "NORMAL", x, y, !cor);
+    }
+}
+
+// -> ISR dos Botões =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Tratamento de interrupções 
+int display_page = 1;
+int num_pages = 5;
+uint32_t last_isr_time = 0;
+void gpio_irq_handler(uint gpio, uint32_t events){
+    uint32_t current_isr_time = to_us_since_boot(get_absolute_time());
+    if(current_isr_time-last_isr_time > 200000){ // Debounce
+        last_isr_time = current_isr_time;
+        
+        if(gpio==BUTTON_A) {
+            display_page--;
+        }
+        else{
+            display_page++;
+        }
+        
+
+        if(display_page>num_pages) display_page=num_pages;
+        if(display_page<1) display_page=1;
+    }
+}
+
+
+uint32_t last_sensor_read = 0;
 
 int main(){
     stdio_init_all();
@@ -279,7 +334,6 @@ int main(){
     gpio_pull_up(I2C_SDA_DISP);
     gpio_pull_up(I2C_SCL_DISP);
 
-    ssd1306_t ssd;
     ssd1306_init(&ssd, WIDTH, HEIGHT, false, endereco, I2C_PORT_DISP);
     ssd1306_config(&ssd);
     ssd1306_fill(&ssd, false);
@@ -348,45 +402,176 @@ int main(){
     config_params.BMP280_temperature.min = 0.0;
     config_params.BMP280_temperature.offset = 0.0;
 
+    // Iniciando o LED RGB
+    set_pwm(LED_RED, wrap);
+    set_pwm(LED_GREEN, wrap);
+    set_pwm(LED_BLUE, wrap);
+    // Iniciando os buzzers
+    set_pwm(BUZZER_A, wrap);
+    set_pwm(BUZZER_B, wrap);
+    
+    // Iniciando os botões
+    gpio_init(BUTTON_A);
+    gpio_set_dir(BUTTON_A, GPIO_IN);
+    gpio_pull_up(BUTTON_A);
+    gpio_set_irq_enabled_with_callback(BUTTON_A, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+
+    gpio_init(BUTTON_B);
+    gpio_set_dir(BUTTON_B, GPIO_IN);
+    gpio_pull_up(BUTTON_B);
+    gpio_set_irq_enabled_with_callback(BUTTON_B, GPIO_IRQ_EDGE_FALL, true, &gpio_irq_handler);
+
+
     start_http_server();
 
     while (true){
         cyw43_arch_poll();
 
-        // Leitura do BMP280
-        bmp280_read_raw(I2C_PORT, &raw_temp_bmp, &raw_pressure);
-        int32_t temperature = bmp280_convert_temp(raw_temp_bmp, &params);
-        int32_t pressure = bmp280_convert_pressure(raw_pressure, raw_temp_bmp, &params);
+        uint32_t current_sensor_read = to_us_since_boot(get_absolute_time());
+        // Temporização para leitura dos sensores
+        if(current_sensor_read-last_sensor_read > 2000000){
+            last_sensor_read = current_sensor_read;
+            // Leitura do BMP280
+            bmp280_read_raw(I2C_PORT, &raw_temp_bmp, &raw_pressure);
+            int32_t temperature = bmp280_convert_temp(raw_temp_bmp, &params);
+            int32_t pressure = bmp280_convert_pressure(raw_pressure, raw_temp_bmp, &params);
 
-        printf("[DEBUG] Leitura de sensores\n");
-        printf("BMP280.pressure = %.3f kPa\n", BMP280_data.pressure);
-        printf("BMP280.temperature = %.2f C\n", BMP280_data.temperature);
+            printf("[DEBUG] Leitura de sensores\n");
+            printf("BMP280.pressure = %.3f kPa\n", BMP280_data.pressure);
+            printf("BMP280.temperature = %.2f C\n", BMP280_data.temperature);
 
-        // Leitura do AHT20
-        if (aht20_read(I2C_PORT, &AHT20_data)){
-            printf("AHT20_data.temperature = %.2f C\n", AHT20_data.temperature);
-            printf("AHT20_data.humidity = %.2f %%\n", AHT20_data.humidity);
+            // Leitura do AHT20
+            if (aht20_read(I2C_PORT, &AHT20_data)){
+                printf("AHT20_data.temperature = %.2f C\n", AHT20_data.temperature);
+                printf("AHT20_data.humidity = %.2f %%\n", AHT20_data.humidity);
+            }
+            else{
+                printf("Erro na leitura do AHT10!\n");
+            }
+            printf("\n\n");
+
+            // Aplicando os offsets de calibração do HTML
+            BMP280_data.pressure = config_params.BMP280_pressure.offset + pressure/1000.0f;
+            BMP280_data.temperature = config_params.BMP280_temperature.offset + temperature/100.0f;
+            AHT20_data.humidity = config_params.AHT20_humidity.offset + AHT20_data.humidity;
+            AHT20_data.temperature= config_params.AHT20_temperature.offset + AHT20_data.temperature;
+
+            // Verifica se deve acionar alerta
+            alerts_handle(&sensor_alerts, config_params, BMP280_data, AHT20_data);
+
+            // Atualizando os dados dos buffers
+            payload_buffers_update(AHT20_data, BMP280_data, &AHT20_buffer, &BMP280_buffer);
         }
-        else{
-            printf("Erro na leitura do AHT10!\n");
+
+        // Strings com os valores
+        char str_tmp_aht[5];
+        char str_humi_aht[5];
+        char str_press_bmp[5];
+        char str_temp_bmp[5];
+
+        char str_offset_tmp_aht[5];
+        char str_offset_humi_aht[5];
+        char str_offset_press_bmp[5];
+        char str_offset_temp_bmp[5];
+
+        // Atualizando as strings
+        sprintf(str_tmp_aht, "%.1f C", AHT20_data.temperature);
+        sprintf(str_humi_aht, "%.1f %%", AHT20_data.humidity);
+        sprintf(str_press_bmp, "%.1f kPa", BMP280_data.pressure);
+        sprintf(str_temp_bmp, "%.1f C", BMP280_data.temperature);
+
+        sprintf(str_offset_tmp_aht, "%.1f C", config_params.AHT20_temperature.offset);
+        sprintf(str_offset_humi_aht, "%.1f %%", config_params.AHT20_humidity.offset);
+        sprintf(str_offset_press_bmp, "%.1f kPa", config_params.BMP280_pressure.offset);
+        sprintf(str_offset_temp_bmp, "%.1f C", config_params.BMP280_temperature.offset);
+
+        // Atualiza o Display LCD
+        // Frame que será reutilizado
+        ssd1306_fill(&ssd, false);
+        ssd1306_rect(&ssd, 0, 0, 128, 64, cor, !cor);
+        // Mensagem superior (Nome do projeto e vagas ocupadas/totais)
+        ssd1306_rect(&ssd, 0, 0, 128, 12, cor, cor); // Fundo preenchido
+        ssd1306_draw_string(&ssd, "DogAtmos", 4, 3, true);
+        // A página coloca o primeiro caracter no x=95
+
+        switch(display_page){
+            // AHT20 - Temperatura
+            case 1:
+                ssd1306_draw_string(&ssd, "1/5", 95, 3, true);
+                ssd1306_draw_string(&ssd, "ATUAL: ", 4, 18, false);
+                ssd1306_draw_string(&ssd, str_tmp_aht, 12+7*8, 18, false);
+                ssd1306_draw_string(&ssd, "STATUS: ", 4, 28, false);
+                // Simbolo de alerta
+                make_alert_display(sensor_alerts.aht20_temperature, 4 + 8*8, 28);
+                // Offset atual
+                ssd1306_draw_string(&ssd, "OFFSET: ", 4, 38, false);
+                ssd1306_draw_string(&ssd, str_tmp_aht, 4 + 8*8, 38, false);
+                // Indicação inferior
+                ssd1306_rect(&ssd, 51, 0, 128, 12, cor, cor); // Fundo preenchido
+                ssd1306_draw_string(&ssd, "AHT-TEMPERATURA", 4, 53, true);
+                break;
+
+            // AHT20 - Umidade
+            case 2:
+                ssd1306_draw_string(&ssd, "2/5", 95, 3, true);
+                ssd1306_draw_string(&ssd, "ATUAL: ", 4, 18, false);
+                ssd1306_draw_string(&ssd, str_humi_aht, 12+7*8, 18, false);
+                ssd1306_draw_string(&ssd, "STATUS: ", 4, 28, false);
+                // Simbolo de alerta
+                make_alert_display(sensor_alerts.aht20_humidity, 4 + 8*8, 28);
+                // Offset atual
+                ssd1306_draw_string(&ssd, "OFFSET: ", 4, 38, false);
+                ssd1306_draw_string(&ssd, str_offset_humi_aht, 4 + 8*8, 38, false);
+                // Indicação inferior
+                ssd1306_rect(&ssd, 51, 0, 128, 12, cor, cor); // Fundo preenchido
+                ssd1306_draw_string(&ssd, "AHT - UMIDADE", 4, 53, true);
+                break;
+
+            // BMP - Pressão
+            case 3:
+                ssd1306_draw_string(&ssd, "3/5", 95, 3, true);
+                ssd1306_draw_string(&ssd, "ATUAL: ", 4, 18, false);
+                ssd1306_draw_string(&ssd, str_press_bmp, 12+7*8, 18, false);
+                ssd1306_draw_string(&ssd, "STATUS: ", 4, 28, false);
+                // Simbolo de alerta
+                make_alert_display(sensor_alerts.bmp280_pressure, 4 + 8*8, 28);
+                // Offset atual
+                ssd1306_draw_string(&ssd, "OFFSET: ", 4, 38, false);
+                ssd1306_draw_string(&ssd, str_offset_press_bmp, 4 + 8*8, 38, false);
+                // Indicação inferior
+                ssd1306_rect(&ssd, 51, 0, 128, 12, cor, cor); // Fundo preenchido
+                ssd1306_draw_string(&ssd, "BMP - PRESSAO", 4, 53, true);
+                break;
+
+            // BMP - Temperatura
+            case 4:
+                ssd1306_draw_string(&ssd, "4/5", 95, 3, true);
+                ssd1306_draw_string(&ssd, "ATUAL: ", 4, 18, false);
+                ssd1306_draw_string(&ssd, str_temp_bmp, 12+7*8, 18, false);
+                ssd1306_draw_string(&ssd, "STATUS: ", 4, 28, false);
+                // Simbolo de alerta
+                make_alert_display(sensor_alerts.bmp280_temperature, 4 + 8*8, 28);
+                // Offset atual
+                ssd1306_draw_string(&ssd, "OFFSET: ", 4, 38, false);
+                ssd1306_draw_string(&ssd, str_offset_temp_bmp, 4 + 8*8, 38, false);
+                // Indicação inferior
+                ssd1306_rect(&ssd, 51, 0, 128, 12, cor, cor); // Fundo preenchido
+                ssd1306_draw_string(&ssd, "BMP-TEMPERATURA", 4, 53, true);
+                break;
+
+            // Tela de IP
+            case 5:
+                ssd1306_draw_string(&ssd, "5/5", 95, 3, true);
+                ssd1306_draw_string(&ssd, "IP do servidor", 4, 24, false);
+                ssd1306_draw_string(&ssd, ip_str, 4, 34, false);
+                break;
         }
 
-        // Aplicando os offsets de calibração do HTML
-        BMP280_data.pressure = config_params.BMP280_pressure.offset + pressure/1000.0f;
-        BMP280_data.temperature = config_params.BMP280_temperature.offset + temperature/100.0f;
-        AHT20_data.humidity = config_params.AHT20_humidity.offset + AHT20_data.humidity;
-        AHT20_data.temperature= config_params.AHT20_temperature.offset + AHT20_data.temperature;
+        
 
-        // Verifica se deve acionar alerta
-        alerts_handle(&sensor_alerts, config_params, BMP280_data, AHT20_data);
+        ssd1306_send_data(&ssd); // Envia para o display
 
-        // Atualizando os dados dos buffers
-        payload_buffers_update(AHT20_data, BMP280_data, &AHT20_buffer, &BMP280_buffer);
-
-
-        printf("\n\n");
-
-        sleep_ms(2000);
+        sleep_ms(50);
     }
 
     cyw43_arch_deinit();
