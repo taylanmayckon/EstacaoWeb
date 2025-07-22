@@ -27,7 +27,7 @@ include_directories( ${CMAKE_SOURCE_DIR}/lib )
 set(FREERTOS_KERNEL_PATH "C:/EmbarcaTech/FreeRTOS-Kernel")
 include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_import.cmake)
 
-add_executable(${PROJECT_NAME} EstacaoWeb.c lib/led_matrix.c lib/ssd1306.c lib/bmp280.c lib/aht20.c lib/payload.c)
+add_executable(${PROJECT_NAME} EstacaoWeb.c lib/led_matrix.c lib/ssd1306.c lib/bmp280.c lib/aht20.c lib/payload.c lib/alerts.c)
 
 pico_set_program_name(${PROJECT_NAME} "EstacaoWeb")
 pico_set_program_version(${PROJECT_NAME} "0.1")

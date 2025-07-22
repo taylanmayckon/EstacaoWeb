@@ -12,6 +12,7 @@
 #include "aht20.h"
 #include "bmp280.h"
 #include "payload.h"
+#include "alerts.h"
 
 // Nome e senha da rede wi-fi
 #define WIFI_SSID "Infornet_Taylan"
@@ -45,9 +46,14 @@ AHT20_data_t AHT20_data;
 BMP280_data_t BMP280_data;
 int32_t raw_temp_bmp;
 int32_t raw_pressure;
-// Buffers para os gráficos
+
+// Para o payload e gráficos
 AHT20_buffer_t AHT20_buffer;
 BMP280_buffer_t BMP280_buffer;
+Payload_sizes_t payload_sizes;
+Sensor_alerts_t sensor_alerts = {false, false, false, false};
+char json_payload[1024]; 
+
 
 // Configurações para o PWM
 uint wrap = 2000;
@@ -251,10 +257,28 @@ int main(){
     ssd1306_draw_string(&ssd, ip_str, 0, 10, false);
     ssd1306_send_data(&ssd);
 
+    // Iniciando os buffers do payload
+    payload_buffers_init(&AHT20_buffer, &BMP280_buffer);
+
     start_http_server();
 
     while (true){
         cyw43_arch_poll();
+
+        // Atualizando o payload
+        payload_sizes.json_size = sizeof(json_payload);
+        payload_sizes.aht20_humi_size = sizeof(AHT20_buffer.humidity);
+        payload_sizes.aht20_temp_size = sizeof(AHT20_buffer.temperature);
+        payload_sizes.bmp280_press_size = sizeof(BMP280_buffer.pressure);
+        payload_sizes.bmp280_temp_size = sizeof(BMP280_buffer.temperature);
+        int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
+
+        if (json_len > 0 && json_len < sizeof(json_payload)) {
+            printf("JSON gerado com sucesso (%d bytes):\n", json_len);
+            printf("%s\n", json_payload);
+        } else {
+            printf("Erro ao gerar o JSON: buffer pequeno demais!\n");
+        }
 
         sleep_ms(300);
     }
