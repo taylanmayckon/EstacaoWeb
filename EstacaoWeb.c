@@ -53,7 +53,7 @@ BMP280_buffer_t BMP280_buffer;
 Payload_sizes_t payload_sizes;
 Sensor_alerts_t sensor_alerts = {false, false, false, false};
 char json_payload[1024]; 
-AlertParams_t alert_params;
+ConfigParams_t config_params;
 
 
 // Configurações para o PWM
@@ -202,21 +202,21 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
         if (parsed_count == 3) {
             // Atualiza os parâmetros do sensor correto 
             if (strcmp(server_state.sensor_id, "AHT20_temperature") == 0) {
-                alert_params.AHT20_temperature.min = min;
-                alert_params.AHT20_temperature.max = max;
-                alert_params.AHT20_temperature.offset = offset;
+                config_params.AHT20_temperature.min = min;
+                config_params.AHT20_temperature.max = max;
+                config_params.AHT20_temperature.offset = offset;
             } else if (strcmp(server_state.sensor_id, "AHT20_humidity") == 0) {
-                alert_params.AHT20_humidity.min = min;
-                alert_params.AHT20_humidity.max = max;
-                alert_params.AHT20_humidity.offset = offset;
+                config_params.AHT20_humidity.min = min;
+                config_params.AHT20_humidity.max = max;
+                config_params.AHT20_humidity.offset = offset;
             } else if (strcmp(server_state.sensor_id, "BMP280_pressure") == 0) {
-                alert_params.BMP280_pressure.min = min;
-                alert_params.BMP280_pressure.max = max;
-                alert_params.BMP280_pressure.offset = offset;
+                config_params.BMP280_pressure.min = min;
+                config_params.BMP280_pressure.max = max;
+                config_params.BMP280_pressure.offset = offset;
             } else if (strcmp(server_state.sensor_id, "BMP280_temperature") == 0) {
-                alert_params.BMP280_temperature.min = min;
-                alert_params.BMP280_temperature.max = max;
-                alert_params.BMP280_temperature.offset = offset;
+                config_params.BMP280_temperature.min = min;
+                config_params.BMP280_temperature.max = max;
+                config_params.BMP280_temperature.offset = offset;
             }
             printf("[DEBUG] Parametros para %s atualizados!\n", server_state.sensor_id);
 
@@ -332,21 +332,21 @@ int main(){
     payload_buffers_init(&AHT20_buffer, &BMP280_buffer);
 
     // Criando a configuração inicial dos alertas
-    alert_params.AHT20_humidity.max = 80.0;
-    alert_params.AHT20_humidity.min = 30.0;
-    alert_params.AHT20_humidity.offset = 0.0;
+    config_params.AHT20_humidity.max = 80.0;
+    config_params.AHT20_humidity.min = 30.0;
+    config_params.AHT20_humidity.offset = 0.0;
 
-    alert_params.AHT20_temperature.max = 40.0;
-    alert_params.AHT20_temperature.min = 0.0;
-    alert_params.AHT20_temperature.offset = 0.0;
+    config_params.AHT20_temperature.max = 40.0;
+    config_params.AHT20_temperature.min = 0.0;
+    config_params.AHT20_temperature.offset = 0.0;
 
-    alert_params.BMP280_pressure.max = 110.0;
-    alert_params.BMP280_pressure.min = 90.0;
-    alert_params.BMP280_pressure.offset = 0.0;
+    config_params.BMP280_pressure.max = 110.0;
+    config_params.BMP280_pressure.min = 90.0;
+    config_params.BMP280_pressure.offset = 0.0;
 
-    alert_params.BMP280_temperature.max = 40.0;
-    alert_params.BMP280_temperature.min = 0.0;
-    alert_params.BMP280_temperature.offset = 0.0;
+    config_params.BMP280_temperature.max = 40.0;
+    config_params.BMP280_temperature.min = 0.0;
+    config_params.BMP280_temperature.offset = 0.0;
 
     start_http_server();
 
@@ -357,9 +357,6 @@ int main(){
         bmp280_read_raw(I2C_PORT, &raw_temp_bmp, &raw_pressure);
         int32_t temperature = bmp280_convert_temp(raw_temp_bmp, &params);
         int32_t pressure = bmp280_convert_pressure(raw_pressure, raw_temp_bmp, &params);
-
-        BMP280_data.pressure = pressure/1000.0f;
-        BMP280_data.temperature = temperature/100.0f;
 
         printf("[DEBUG] Leitura de sensores\n");
         printf("BMP280.pressure = %.3f kPa\n", BMP280_data.pressure);
@@ -373,6 +370,15 @@ int main(){
         else{
             printf("Erro na leitura do AHT10!\n");
         }
+
+        // Aplicando os offsets de calibração do HTML
+        BMP280_data.pressure = config_params.BMP280_pressure.offset + pressure/1000.0f;
+        BMP280_data.temperature = config_params.BMP280_temperature.offset + temperature/100.0f;
+        AHT20_data.humidity = config_params.AHT20_humidity.offset + AHT20_data.humidity;
+        AHT20_data.temperature= config_params.AHT20_temperature.offset + AHT20_data.temperature;
+
+        // Verifica se deve acionar alerta
+        alerts_handle(&sensor_alerts, config_params, BMP280_data, AHT20_data);
 
         // Atualizando os dados dos buffers
         payload_buffers_update(AHT20_data, BMP280_data, &AHT20_buffer, &BMP280_buffer);

@@ -5,7 +5,7 @@
 #include "bmp280.h"
 #include "alerts.h"
 
-#define BUFFER_SIZE 10
+#define BUFFER_SIZE 30
 
 typedef struct {
     float temperature[BUFFER_SIZE];
