@@ -1,6 +1,7 @@
 #include "alerts.h"
 #include "bmp280.h"
 #include "aht20.h"
+#include "hardware/pwm.h"
 
 bool alert_check(float param, float value, bool isMin){
     if(isMin){

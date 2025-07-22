@@ -45,6 +45,9 @@ ssd1306_t ssd;
 #define I2C_SCL 1
 #define SEA_LEVEL_PRESSURE 101325.0 // Pressão ao nível do mar em Pa
 
+// Para a matriz de leds
+#define IS_RGBW false
+
 // Estrutura para armazenar os dados dos sensores
 // Dados individuais
 AHT20_data_t AHT20_data;
@@ -322,6 +325,7 @@ void gpio_irq_handler(uint gpio, uint32_t events){
 
 
 uint32_t last_sensor_read = 0;
+bool buzzer_active = false;
 
 int main(){
     stdio_init_all();
@@ -356,6 +360,12 @@ int main(){
     // Inicializando o AHT20
     aht20_reset(I2C_PORT);
     aht20_init(I2C_PORT);
+
+    // Iniciando a matriz de leds
+    pio = pio0;
+    sm = 0;
+    uint offset = pio_add_program(pio, &ws2812_program);
+    ws2812_program_init(pio, sm, offset, LED_MATRIX_PIN, 800000, IS_RGBW);
 
     // Iniciando Wi-Fi
     if (cyw43_arch_init()){
@@ -485,6 +495,25 @@ int main(){
         sprintf(str_offset_press_bmp, "%.1f kPa", config_params.BMP280_pressure.offset);
         sprintf(str_offset_temp_bmp, "%.1f C", config_params.BMP280_temperature.offset);
 
+        // Checa ativação dos alertas
+        if(sensor_alerts.aht20_humidity || sensor_alerts.aht20_temperature || sensor_alerts.bmp280_pressure || sensor_alerts.bmp280_temperature){
+            pwm_set_gpio_level(BUZZER_A, wrap*0.02);
+            pwm_set_gpio_level(BUZZER_B, wrap*0.02);
+            pwm_set_gpio_level(LED_RED, wrap*0.05);
+            matrix_alert(0.05);
+            sleep_ms(50);
+            pwm_set_gpio_level(BUZZER_A, 0);
+            pwm_set_gpio_level(BUZZER_B, 0);
+            pwm_set_gpio_level(LED_RED, 0);
+            matrix_alert(0.0);
+        }
+        else{
+            pwm_set_gpio_level(BUZZER_A, 0);
+            pwm_set_gpio_level(BUZZER_B, 0);
+            pwm_set_gpio_level(LED_RED, 0);
+            matrix_alert(0.0);
+        }
+
         // Atualiza o Display LCD
         // Frame que será reutilizado
         ssd1306_fill(&ssd, false);
@@ -492,7 +521,6 @@ int main(){
         // Mensagem superior (Nome do projeto e vagas ocupadas/totais)
         ssd1306_rect(&ssd, 0, 0, 128, 12, cor, cor); // Fundo preenchido
         ssd1306_draw_string(&ssd, "DogAtmos", 4, 3, true);
-        // A página coloca o primeiro caracter no x=95
 
         switch(display_page){
             // AHT20 - Temperatura

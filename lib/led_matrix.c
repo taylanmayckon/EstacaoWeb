@@ -13,6 +13,15 @@ Led_frame led_buffer= {{
     {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, {0,0,0}, 
 }};
 
+// Frame do alerta
+Led_frame alert_frame = {{
+    {0,0,0}, {0,0,0}, {255,0,0}, {0,0,0}, {0,0,0}, 
+    {0,0,0}, {0,0,0}, {255,0,0}, {0,0,0}, {0,0,0}, 
+    {0,0,0}, {0,0,0}, {255,0,0}, {0,0,0}, {0,0,0}, 
+    {0,0,0}, {0,0,0},   {0,0,0},   {0,0,0}, {0,0,0}, 
+    {0,0,0}, {0,0,0}, {255,0,0}, {0,0,0}, {0,0,0}, 
+}};
+
 static inline void put_pixel(uint32_t pixel_grb){
     pio_sm_put_blocking(pio0, 0, pixel_grb << 8u);
 }
@@ -37,8 +46,6 @@ void set_leds(float intensidade){
 // Função genérica para atualiza matriz
 void matrix_update_leds(Led_frame *frame, float intensidade){
     // Ordenando corretamente o vetor recebido no buffer
-
-    // Organiza melhor essa lógica, talvez refatorando como uma matriz [5][5] ?
     int j = 0; // Variável para controle do index espelhado
     for(int i=0; i<25; i++){
         if(i>4 && i<10){
@@ -55,4 +62,8 @@ void matrix_update_leds(Led_frame *frame, float intensidade){
         }
     }
     set_leds(intensidade);
+}
+
+void matrix_alert(float intensidade){
+    matrix_update_leds(&alert_frame, intensidade);
 }
