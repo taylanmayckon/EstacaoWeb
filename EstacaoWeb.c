@@ -94,13 +94,13 @@ const char HTML_BODY[] =
     "<script>"
     "const sensorConfig=[{id:'AHT20_temperature',sensorName:'AHT20',label:'Temperatura',unit:'°C',color:[255,99,132],defaultMin:0,defaultMax:40,defaultOffset:0},{id:'AHT20_humidity',sensorName:'AHT20',label:'Umidade',unit:'%',color:[54,162,235],defaultMin:30,defaultMax:80,defaultOffset:0},{id:'BMP280_pressure',sensorName:'BMP280',label:'Pressão',unit:'kPa',color:[75,192,192],defaultMin:90,defaultMax:110,defaultOffset:0},{id:'BMP280_temperature',sensorName:'BMP280',label:'Temperatura',unit:'°C',color:[255,159,64],defaultMin:0,defaultMax:40,defaultOffset:0}];"
     "const charts={};const fetchInterval=2000;"
-    "function initializeDashboard(){const t=document.getElementById('main-content');sensorConfig.forEach(e=>{const n=\"<div class='sensor-row'><div class='chart-container'><h2>\"+e.sensorName+\" - \"+e.label+\"</h2><canvas id='\"+e.id+\"_chart'></canvas></div><div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+e.id+\"'>--</span> \"+e.unit+\"</p></div><div class='input-group'><label for='min_\"+e.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+e.id+\"' value='\"+e.defaultMin+\"'></div><div class='input-group'><label for='max_\"+e.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+e.id+\"' value='\"+e.defaultMax+\"'></div><div class='input-group'><label for='offset_\"+e.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+e.id+\"' value='\"+e.defaultOffset+\"'></div><div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+e.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>\";t.insertAdjacentHTML('beforeend',n);['min','max','offset'].forEach(t=>{document.getElementById(t+\"_\"+e.id).addEventListener('change',t=>handleConfigChange(e.id,t))});const[o,a,s]=e.color;charts[e.id]=new Chart(document.getElementById(e.id+\"_chart\").getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:e.label,data:[],borderColor:\"rgba(\"+o+\",\"+a+\",\"+s+\",1)\",backgroundColor:\"rgba(\"+o+\",\"+a+\",\"+s+\",0.2)\",borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:e.label+\" [\"+e.unit+\"]\"},beginAtZero:!1}},animation:{duration:500}}})})}"
-    "function handleConfigChange(e,t){const n=sensorConfig.find(t=>t.id===e),o=t.target,a=o.id.split('_')[0];if(''===o.value){const e=n[\"default\"+a.charAt(0).toUpperCase()+a.slice(1)];o.value=e}const s=document.getElementById(\"min_\"+e).value,i=document.getElementById(\"max_\"+e).value,d=document.getElementById(\"offset_\"+e).value,l={[e]:{min:parseFloat(s),max:parseFloat(i),offset:parseFloat(d)}};fetch('/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(l)})}"
-    "function loadConfig(){fetch('/config').then(e=>e.json()).then(t=>{sensorConfig.forEach(e=>{const n=t[e.id]||{};document.getElementById(\"min_\"+e.id).value=n.min??e.defaultMin;document.getElementById(\"max_\"+e.id).value=n.max??e.defaultMax;document.getElementById(\"offset_\"+e.id).value=n.offset??e.defaultOffset})})}"
-    "function updateData(){fetch('/data').then(e=>e.json()).then(t=>{const n=new Date;sensorConfig.forEach(e=>{const o=t[e.id],a=t[\"alert_\"+e.id];updateCharts(charts[e.id],n,o),document.getElementById(\"current_\"+e.id).textContent=parseFloat(o.at(-1)).toFixed(2),checkAlerts(e.id,a)})})}"
-    "function checkAlerts(e,t){const n=document.getElementById(\"alert_\"+e);let o='on'===t;n.classList.toggle('triggered',o),n.textContent=o?'ALERTA!':'NORMAL'}"
-    "function updateCharts(e,t,n){const o=[];const a=n.length;for(let s=0;s<a;s++){const i=new Date(t.getTime()-(a-1-s)*fetchInterval);o.push(i.toLocaleTimeString('pt-BR'))}e.data.labels=o,e.data.datasets[0].data=n,e.update('none')}"
-    "initializeDashboard();loadConfig();updateData();setInterval(updateData,fetchInterval);"
+    "function initializeDashboard(){const t=document.getElementById('main-content');sensorConfig.forEach(e=>{const n=\"<div class='sensor-row'><div class='chart-container'><h2>\"+e.sensorName+\" - \"+e.label+\"</h2><canvas id='\"+e.id+\"_chart'></canvas></div><div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+e.id+\"'>--</span> \"+e.unit+\"</p></div><div class='input-group'><label for='min_\"+e.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+e.id+\"' value='\"+e.defaultMin+\"'></div><div class='input-group'><label for='max_\"+e.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+e.id+\"' value='\"+e.defaultMax+\"'></div><div class='input-group'><label for='offset_\"+e.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+e.id+\"' value='\"+e.defaultOffset+\"'></div><div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+e.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>\";t.insertAdjacentHTML('beforeend',n);['min','max','offset'].forEach(t=>{document.getElementById(t+'_'+e.id).addEventListener('change',()=>handleConfigChange(e.id))});const[o,a,s]=e.color;charts[e.id]=new Chart(document.getElementById(e.id+'_chart').getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:e.label,data:[],borderColor:'rgba('+o+','+a+','+s+',1)',backgroundColor:'rgba('+o+','+a+','+s+',0.2)',borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:e.label+' ['+e.unit+']'},beginAtZero:!1}},animation:{duration:500}}})})}"
+    "function handleConfigChange(e){const t=sensorConfig.find(t=>t.id===e),n=document.getElementById(`min_${e}`),o=document.getElementById(`max_${e}`),a=document.getElementById(`offset_${e}`);''===n.value&&(n.value=t.defaultMin),''===o.value&&(o.value=t.defaultMax),''===a.value&&(a.value=t.defaultOffset);const s={min:parseFloat(n.value),max:parseFloat(o.value),offset:parseFloat(a.value)};fetch(`/config/${e}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)})}"
+    "function loadConfig(){fetch('/config').then(e=>e.json()).then(t=>{sensorConfig.forEach(e=>{const n=t[e.id]||{};document.getElementById(`min_${e.id}`).value=n.min??e.defaultMin,document.getElementById(`max_${e.id}`).value=n.max??e.defaultMax,document.getElementById(`offset_${e.id}`).value=n.offset??e.defaultOffset})})}"
+    "function updateData(){fetch('/data').then(e=>e.json()).then(t=>{const n=new Date;sensorConfig.forEach(e=>{const o=t[e.id];if(!o)return;const a=t[`alert_${e.id}`];updateCharts(charts[e.id],n,o),document.getElementById(`current_${e.id}`).textContent=parseFloat(o.at(-1)).toFixed(2),checkAlerts(e.id,a)})})}"
+    "function checkAlerts(e,t){const n=document.getElementById(`alert_${e}`);let o='on'===t;n.classList.toggle('triggered',o),n.textContent=o?'ALERTA!':'NORMAL'}"
+    "function updateCharts(e,t,n){const o=[],a=n.length;for(let s=0;s<a;s++){const c=new Date(t.getTime()-(a-1-s)*fetchInterval);o.push(c.toLocaleTimeString('pt-BR'))}e.data.labels=o,e.data.datasets[0].data=n,e.update('none')}"
+    "initializeDashboard();loadConfig();updateData();setInterval(updateData,2000);"
     "</script>"
     "</body></html>";
 
@@ -125,13 +125,26 @@ static err_t http_sent(void *arg, struct tcp_pcb *tpcb, u16_t len){
     return ERR_OK;
 }
 
+// Estrutura para guardar o estado do nosso servidor entre chamadas
+typedef enum {
+    STATE_NORMAL,
+    STATE_WAITING_FOR_BODY
+} server_mode_t;
+
+typedef struct {
+    server_mode_t mode;
+    char sensor_id[32];
+} server_state_t;
+
+server_state_t server_state = { .mode = STATE_NORMAL };
+
 static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t err){
     if (!p){
         tcp_close(tpcb);
+        server_state.mode = STATE_NORMAL; 
         return ERR_OK;
     }
 
-    char *req = (char *)p->payload;
     struct http_state *hs = malloc(sizeof(struct http_state));
     if (!hs){
         pbuf_free(p);
@@ -140,69 +153,91 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
     }
     hs->sent = 0;
 
-    // Dados atuais dos dois sensores
-    if (strstr(req, "GET /data")){
-       // Atualizando o payload
-        payload_sizes.json_size = sizeof(json_payload);
-        payload_sizes.aht20_humi_size = sizeof(AHT20_buffer.humidity);
-        payload_sizes.aht20_temp_size = sizeof(AHT20_buffer.temperature);
-        payload_sizes.bmp280_press_size = sizeof(BMP280_buffer.pressure);
-        payload_sizes.bmp280_temp_size = sizeof(BMP280_buffer.temperature);
-        int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
+    char request_buffer[1500];
+    pbuf_copy_partial(p, request_buffer, p->tot_len, 0);
+    request_buffer[p->tot_len] = '\0';
 
-        // Debug 
-        printf("[DEBUG] GET /data\n");
-        if (json_len > 0 && json_len < sizeof(json_payload)) {
-            printf("JSON gerado com sucesso (%d bytes):\n", json_len);
-            printf("%s\n", json_payload);
+
+    // INÍCIO DA MÁQUINA DE ESTADOS 
+    if (server_state.mode == STATE_NORMAL) {
+        // MODO NORMAL: O servidor não está esperando por nada 
+
+        if (strstr(request_buffer, "GET /data")){
+            payload_sizes.json_size = sizeof(json_payload);
+            payload_sizes.aht20_humi_size = sizeof(AHT20_buffer.humidity);
+            payload_sizes.aht20_temp_size = sizeof(AHT20_buffer.temperature);
+            payload_sizes.bmp280_press_size = sizeof(BMP280_buffer.pressure);
+            payload_sizes.bmp280_temp_size = sizeof(BMP280_buffer.temperature);
+
+            int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
+            hs->len = snprintf(hs->response, sizeof(hs->response),
+                               "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+                               json_len, json_payload);
+        }
+        else if (strncmp(request_buffer, "POST /config/", 13) == 0) {
+            // Primeira parte de um POST: Apenas os cabeçalhos.
+            sscanf(request_buffer, "POST /config/%s", server_state.sensor_id);
+            printf("[DEBUG] POST Headers recebidos para: %s. Aguardando o corpo...\n", server_state.sensor_id);
+            
+            // Mudando o estado para esperar a próxima chamada
+            server_state.mode = STATE_WAITING_FOR_BODY;
+
+            free(hs); // Liberando o 'hs' pois não vai usar agora
+            pbuf_free(p);
+            return ERR_OK; 
+        }
+        else { 
+            hs->len = snprintf(hs->response, sizeof(hs->response),
+                               "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+                               (int)strlen(HTML_BODY), HTML_BODY);
+        }
+
+    } else if (server_state.mode == STATE_WAITING_FOR_BODY) {
+        // MODO DE ESPERA: Esse buffer é o corpo JSON do POST anterior
+        printf("[DEBUG] Corpo do POST recebido para %s: %s\n", server_state.sensor_id, request_buffer);
+        
+        float min, max, offset;
+        int parsed_count = sscanf(request_buffer, "{\"min\":%f,\"max\":%f,\"offset\":%f}", &min, &max, &offset);
+
+        if (parsed_count == 3) {
+            // Atualiza os parâmetros do sensor correto 
+            if (strcmp(server_state.sensor_id, "AHT20_temperature") == 0) {
+                alert_params.AHT20_temperature.min = min;
+                alert_params.AHT20_temperature.max = max;
+                alert_params.AHT20_temperature.offset = offset;
+            } else if (strcmp(server_state.sensor_id, "AHT20_humidity") == 0) {
+                alert_params.AHT20_humidity.min = min;
+                alert_params.AHT20_humidity.max = max;
+                alert_params.AHT20_humidity.offset = offset;
+            } else if (strcmp(server_state.sensor_id, "BMP280_pressure") == 0) {
+                alert_params.BMP280_pressure.min = min;
+                alert_params.BMP280_pressure.max = max;
+                alert_params.BMP280_pressure.offset = offset;
+            } else if (strcmp(server_state.sensor_id, "BMP280_temperature") == 0) {
+                alert_params.BMP280_temperature.min = min;
+                alert_params.BMP280_temperature.max = max;
+                alert_params.BMP280_temperature.offset = offset;
+            }
+            printf("[DEBUG] Parametros para %s atualizados!\n", server_state.sensor_id);
+
+            // Enviando a resposta de sucesso
+            const char *ok_resp = "OK";
+            hs->len = snprintf(hs->response, sizeof(hs->response),
+                                   "HTTP/1.1 200 OK\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+                                   strlen(ok_resp), ok_resp);
         } else {
-            printf("Erro ao gerar o JSON: buffer pequeno demais!\n");
+             const char *err_resp = "Bad Request";
+             hs->len = snprintf(hs->response, sizeof(hs->response),
+                                   "HTTP/1.1 400 Bad Request\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s",
+                                   strlen(err_resp), err_resp);
         }
-
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                            "HTTP/1.1 200 OK\r\n"
-                            "Content-Type: application/json\r\n"
-                            "Content-Length: %d\r\n"
-                            "Connection: close\r\n"
-                            "\r\n"
-                            "%s",
-                            json_len, json_payload);
+        
+        // Prepara para a próxima requisição
+        server_state.mode = STATE_NORMAL;
     }
-    else if(strstr(req, "POST /config")){
-        char *read_data = strstr(req, "\r\n\r\n");
-        printf("[DEBUG] POST /config\n%s", read_data);
-        if(read_data){
-            read_data += 4;
-            int read_number = sscanf(read_data, "{\"AHT20_temperature\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
-                                                "\"AHT20_humidity\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
-                                                "\"BMP280_pressure\":{\"min\":%f,\"max\":%f,\"offset\":%f},"
-                                                "\"BMP280_temperature\":{\"min\":%f,\"max\":%f,\"offset\":%f}}",
-                                                &alert_params.AHT20_temperature.min, &alert_params.AHT20_temperature.max, &alert_params.AHT20_temperature.offset,
-                                                &alert_params.AHT20_humidity.min, &alert_params.AHT20_humidity.max, &alert_params.AHT20_humidity.offset,
-                                                &alert_params.BMP280_pressure.min, &alert_params.BMP280_pressure.max, &alert_params.BMP280_pressure.offset,
-                                                &alert_params.BMP280_temperature.min, &alert_params.BMP280_temperature.max, &alert_params.BMP280_temperature.offset);
-            if(read_number==12){
-                printf("\n[DEBUG] POST /config concluido com sucesso!\n");
-            }
-            else{
-                printf("\n[DEBUG] Erro na requisição de POST /config!\n");
-            }
-        }
-    }
-    else { 
-        hs->len = snprintf(hs->response, sizeof(hs->response),
-                        "HTTP/1.1 200 OK\r\n"
-                        "Content-Type: text/html\r\n"
-                        "Content-Length: %d\r\n"
-                        "Connection: close\r\n"
-                        "\r\n"
-                        "%s",
-                        (int)strlen(HTML_BODY), HTML_BODY);
-    }
-
+    
     tcp_arg(tpcb, hs);
     tcp_sent(tpcb, http_sent);
-
     tcp_write(tpcb, hs->response, hs->len, TCP_WRITE_FLAG_COPY);
     tcp_output(tpcb);
 

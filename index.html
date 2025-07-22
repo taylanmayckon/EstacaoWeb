@@ -114,7 +114,6 @@
 
         function initializeDashboard() {
             const container = document.getElementById('main-content');
-
             sensorConfig.forEach(sensor => {
                 const sensorHtml = `
                     <div class='sensor-row'>
@@ -132,11 +131,12 @@
                     </div>`;
                 container.insertAdjacentHTML('beforeend', sensorHtml);
 
+                // Adiciona o event listener para cada campo de input
                 ['min', 'max', 'offset'].forEach(type => {
                     const inputElement = document.getElementById(`${type}_${sensor.id}`);
+                    // Ao invés de passar o evento, apenas passamos o ID, pois a função já busca todos os valores
                     inputElement.addEventListener('change', () => handleConfigChange(sensor.id));
                 });
-
 
                 const [r, g, b] = sensor.color;
                 charts[sensor.id] = new Chart(document.getElementById(`${sensor.id}_chart`).getContext('2d'), {
@@ -166,33 +166,39 @@
             });
         }
 
-        function handleConfigChange(sensorId, event) {
+        function handleConfigChange(sensorId) {
             const sensor = sensorConfig.find(s => s.id === sensorId);
-            const inputElement = event.target;
-            const configType = inputElement.id.split('_')[0]; 
+            const minInput = document.getElementById(`min_${sensorId}`);
+            const maxInput = document.getElementById(`max_${sensorId}`);
+            const offsetInput = document.getElementById(`offset_${sensorId}`);
 
-            if (inputElement.value === '') {
-                const defaultValue = sensor[`default${configType.charAt(0).toUpperCase() + configType.slice(1)}`]; 
-                inputElement.value = defaultValue;
-            }
-            const minVal = document.getElementById(`min_${sensorId}`).value;
-            const maxVal = document.getElementById(`max_${sensorId}`).value;
-            const offsetVal = document.getElementById(`offset_${sensorId}`).value;
+            if (minInput.value === '') minInput.value = sensor.defaultMin;
+            if (maxInput.value === '') maxInput.value = sensor.defaultMax;
+            if (offsetInput.value === '') offsetInput.value = sensor.defaultOffset;
+            
             const payload = {
-                [sensorId]: {
-                    min: parseFloat(minVal),
-                    max: parseFloat(maxVal),
-                    offset: parseFloat(offsetVal)
-                }
+                min: parseFloat(minInput.value),
+                max: parseFloat(maxInput.value),
+                offset: parseFloat(offsetInput.value)
             };
-            fetch('/config', {
+            
+            fetch(`/config/${sensorId}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify(payload),
             })
+            .then(response => {
+                if (!response.ok) {
+                    console.error(`Falha ao atualizar a configuração para ${sensorId}`);
+                } else {
+                    console.log(`Configuração para ${sensorId} atualizada com sucesso!`);
+                }
+            })
+            .catch(error => console.error('Erro na requisição:', error));
         }
+
         function loadConfig() {
             fetch('/config').then(res => res.json()).then(configData => {
                 sensorConfig.forEach(sensor => {
@@ -201,7 +207,7 @@
                     document.getElementById(`max_${sensor.id}`).value = savedConfig.max ?? sensor.defaultMax;
                     document.getElementById(`offset_${sensor.id}`).value = savedConfig.offset ?? sensor.defaultOffset;
                 });
-            })
+            });
         }
 
         function updateData(){
@@ -209,11 +215,13 @@
                 const timestamp = new Date();
                 sensorConfig.forEach(sensor => {
                     const dataArray = data[sensor.id];
+                    if (!dataArray) return; 
+                    
                     const alertStatus = data[`alert_${sensor.id}`];
                     updateCharts(charts[sensor.id], timestamp, dataArray);
                     document.getElementById(`current_${sensor.id}`).textContent = parseFloat(dataArray.at(-1)).toFixed(2);
                     checkAlerts(sensor.id, alertStatus);
-                })
+                });
             });
         }
 
