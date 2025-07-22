@@ -1,57 +1,110 @@
 <!DOCTYPE html>
-<html lang='pt-br'>
-<head>
-    <meta charset='UTF-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>DogAtmos - EmbarcaTech</title>
+<html lang="pt-br">
 
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DogAtmos - EmbarcaTech</title>
     <style>
+        :root {
+            --bg-color: #f4f7f9;
+            --header-bg: #1e2a38;
+            --card-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #5a6e7f;
+            --accent-color: #3498db;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --border-color: #e8eef3;
+            --shadow-color: rgba(44, 62, 80, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f0f2f5;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
         }
-        h1 {
-            text-align: center;
-            color: #1e3a5f;
-            margin-bottom: 30px;
-        }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-        }
-        .main-content {
-            max-width: 1200px;
-            margin: 0 auto;
+
+        .page-header {
+            background-color: var(--header-bg);
+            color: var(--card-bg);
+            padding: 20px 40px;
             display: flex;
-            flex-direction: column;
-            gap: 20px;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
         }
-        .sensor-row {
+
+        .page-header h1 {
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+
+        main {
+            padding: 30px 20px;
+        }
+
+        .page-footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .page-footer h3 {
+            margin-bottom: 8px;
+        }
+
+        .dashboard-grid {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+        }
+
+        .sensor-card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            padding: 25px;
             display: flex;
             flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 20px;
-            padding: 20px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            gap: 30px;
+            transition: transform .3s ease, box-shadow .3s ease;
         }
+
+        .sensor-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(44, 62, 80, 0.15);
+        }
+
+        .sensor-card h2 {
+            width: 100%;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 5px;
+            font-size: 1.4em;
+        }
+
         .chart-container {
             flex: 2;
             min-width: 300px;
-            max-width: 700px;
         }
+
         .chart-container canvas {
             width: 100% !important;
-            height: 300px !important;
         }
+
         .sensor-info {
             flex: 1;
             min-width: 250px;
@@ -59,195 +112,338 @@
             flex-direction: column;
             gap: 15px;
         }
-        .info-item, .input-group, .alert-status-container {
+
+        .info-item,
+        .input-group,
+        .alert-status-container {
             background-color: #f8f9fa;
-            padding: 10px 15px;
-            border-radius: 6px;
-            border: 1px solid #e9ecef;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
         }
-        .info-item p { margin: 0; font-size: 1.2em; font-weight: 500; }
-        .info-item span { font-weight: 400; color: #007bff; }
-        .input-group label, .alert-status-container label { display: block; margin-bottom: 5px; font-weight: 500; }
-        .input-group input { width: 100%; padding: 8px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; }
-        .alert-indicator { padding: 10px; border-radius: 8px; text-align: center; font-weight: bold; color: white; background-color: #4CAF50; transition: background-color 0.3s ease, opacity 0.3s ease; }
-        .alert-indicator.triggered { background-color: #f44336; animation: blink 1.2s infinite ease-in-out; }
-        @keyframes blink { 50% { opacity: 0.7; } }
+
+        .info-item p {
+            font-size: 1.1em;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .info-item span {
+            font-weight: 600;
+            color: var(--accent-color);
+            font-size: 1.3em;
+        }
+
+        .input-group label,
+        .alert-status-container label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: .9em;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .alert-indicator {
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            background-color: var(--success-color);
+            transition: background-color .3s ease;
+            letter-spacing: .5px;
+        }
+
+        .alert-indicator.triggered {
+            background-color: var(--danger-color);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, .7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(231, 76, 60, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(231, 76, 60, 0);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header {
+                padding: 15px 20px;
+            }
+
+            main {
+                padding: 20px 15px;
+            }
+        }
     </style>
-
-    <script src='https://cdn.jsdelivr.net/npm/chart.js'></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body>
 
-    <h1>DogAtmos - EmbarcaTech</h1>
-    <div id='main-content' class='main-content'>
-    </div>
-    
-    <div style='text-align: center; max-width: 1200px; margin: 40px auto 20px;'>
-        <hr style='border: 0; height: 1px; background-color: #ddd;'>
+<body>
+    <header class="page-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+        </svg>
+        <h1>DogAtmos - EmbarcaTech</h1>
+    </header>
+
+    <main>
+        <div id="dashboard-grid" class="dashboard-grid"></div>
+    </main>
+
+    <footer class="page-footer">
         <h3>Desenvolvido por: Taylan Mayckon</h3>
         <p>Atividade da Fase 2 do EmbarcaTech, envolvendo uso dos sensores BMP280 e AHT20 para criar uma estação meteorológica com interface WEB.</p>
-    </div>
+    </footer>
 
     <script>
-        const sensorConfig = [
-            {
-                id: 'AHT20_temperature', sensorName: 'AHT20', label: 'Temperatura', unit: '°C',
-                color: [255, 99, 132], defaultMin: 0, defaultMax: 40, defaultOffset: 0
-            },
-            {
-                id: 'AHT20_humidity', sensorName: 'AHT20', label: 'Umidade', unit: '%',
-                color: [54, 162, 235], defaultMin: 30, defaultMax: 80, defaultOffset: 0
-            },
-            {
-                id: 'BMP280_pressure', sensorName: 'BMP280', label: 'Pressão', unit: 'kPa',
-                color: [75, 192, 192], defaultMin: 90, defaultMax: 110, defaultOffset: 0
-            },
-            {
-                id: 'BMP280_temperature', sensorName: 'BMP280', label: 'Temperatura', unit: '°C',
-                color: [255, 159, 64], defaultMin: 0, defaultMax: 40, defaultOffset: 0
-            }
-        ];
+        const sensorConfig = [{
+            id: 'AHT20_temperature',
+            sensorName: 'AHT20',
+            label: 'Temperatura',
+            unit: '°C',
+            color: [52, 152, 219],
+            defaultMin: 0,
+            defaultMax: 40,
+            defaultOffset: 0
+        }, {
+            id: 'AHT20_humidity',
+            sensorName: 'AHT20',
+            label: 'Umidade',
+            unit: '%',
+            color: [26, 188, 156],
+            defaultMin: 30,
+            defaultMax: 80,
+            defaultOffset: 0
+        }, {
+            id: 'BMP280_pressure',
+            sensorName: 'BMP280',
+            label: 'Pressão',
+            unit: 'kPa',
+            color: [155, 89, 182],
+            defaultMin: 90,
+            defaultMax: 110,
+            defaultOffset: 0
+        }, {
+            id: 'BMP280_temperature',
+            sensorName: 'BMP280',
+            label: 'Temperatura',
+            unit: '°C',
+            color: [241, 196, 15],
+            defaultMin: 0,
+            defaultMax: 40,
+            defaultOffset: 0
+        }];
 
         const charts = {};
         const fetchInterval = 2000;
 
         function initializeDashboard() {
-            const container = document.getElementById('main-content');
-            sensorConfig.forEach(sensor => {
-                const sensorHtml = `
-                    <div class='sensor-row'>
+            const dashboardGrid = document.getElementById('dashboard-grid');
+            sensorConfig.forEach(config => {
+                const cardHTML = `
+                    <div class='sensor-card'>
+                        <h2>${config.sensorName} - ${config.label}</h2>
                         <div class='chart-container'>
-                            <h2>${sensor.sensorName} - ${sensor.label}</h2>
-                            <canvas id='${sensor.id}_chart'></canvas>
+                            <canvas id='${config.id}_chart'></canvas>
                         </div>
                         <div class='sensor-info'>
-                            <div class='info-item'><p>Valor Atual: <span id='current_${sensor.id}'>--</span> ${sensor.unit}</p></div>
-                            <div class='input-group'><label for='min_${sensor.id}'>Limite Mínimo:</label><input type='number' id='min_${sensor.id}' value='${sensor.defaultMin}'></div>
-                            <div class='input-group'><label for='max_${sensor.id}'>Limite Máximo:</label><input type='number' id='max_${sensor.id}' value='${sensor.defaultMax}'></div>
-                            <div class='input-group'><label for='offset_${sensor.id}'>Offset de Calibração:</label><input type='number' id='offset_${sensor.id}' value='${sensor.defaultOffset}'></div>
-                            <div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_${sensor.id}' class='alert-indicator'>NORMAL</div></div>
+                            <div class='info-item'>
+                                <p>Valor Atual:</p>
+                                <span id='current_${config.id}'>--</span> ${config.unit}
+                            </div>
+                            <div class='input-group'>
+                                <label for='min_${config.id}'>Limite Mínimo:</label>
+                                <input type='number' id='min_${config.id}' value='${config.defaultMin}'>
+                            </div>
+                            <div class='input-group'>
+                                <label for='max_${config.id}'>Limite Máximo:</label>
+                                <input type='number' id='max_${config.id}' value='${config.defaultMax}'>
+                            </div>
+                            <div class='input-group'>
+                                <label for='offset_${config.id}'>Offset de Calibração:</label>
+                                <input type='number' id='offset_${config.id}' value='${config.defaultOffset}'>
+                            </div>
+                            <div class='alert-status-container'>
+                                <label>Status do Alerta:</label>
+                                <div id='alert_${config.id}' class='alert-indicator'>NORMAL</div>
+                            </div>
                         </div>
                     </div>`;
-                container.insertAdjacentHTML('beforeend', sensorHtml);
+                dashboardGrid.insertAdjacentHTML('beforeend', cardHTML);
 
-                // Adiciona o event listener para cada campo de input
                 ['min', 'max', 'offset'].forEach(type => {
-                    const inputElement = document.getElementById(`${type}_${sensor.id}`);
-                    // Ao invés de passar o evento, apenas passamos o ID, pois a função já busca todos os valores
-                    inputElement.addEventListener('change', () => handleConfigChange(sensor.id));
+                    document.getElementById(`${type}_${config.id}`).addEventListener('change', () => handleConfigChange(config.id));
                 });
 
-                const [r, g, b] = sensor.color;
-                charts[sensor.id] = new Chart(document.getElementById(`${sensor.id}_chart`).getContext('2d'), {
+                const [r, g, b] = config.color;
+                charts[config.id] = new Chart(document.getElementById(`${config.id}_chart`).getContext('2d'), {
                     type: 'line',
                     data: {
                         labels: [],
                         datasets: [{
-                            label: sensor.label,
+                            label: config.label,
                             data: [],
-                            borderColor: `rgba(${r}, ${g}, ${b}, 1)`,
-                            backgroundColor: `rgba(${r}, ${g}, ${b}, 0.2)`,
+                            borderColor: `rgba(${r},${g},${b},1)`,
+                            backgroundColor: `rgba(${r},${g},${b},0.15)`,
                             borderWidth: 2,
                             fill: true,
-                            tension: 0.4
+                            tension: 0.4,
+                            pointRadius: 2,
+                            pointBackgroundColor: `rgba(${r},${g},${b},1)`
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            x: { title: { display: true, text: 'Tempo' } },
-                            y: { title: { display: true, text: `${sensor.label} [${sensor.unit}]` }, beginAtZero: false }
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Tempo'
+                                },
+                                grid: {
+                                    display: false
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: `${config.label} [${config.unit}]`
+                                },
+                                beginAtZero: false,
+                                grid: {
+                                    color: 'rgba(200,200,200,0.2)'
+                                }
+                            }
                         },
-                        animation: { duration: 500 }
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        animation: {
+                            duration: 400
+                        }
                     }
                 });
             });
         }
 
         function handleConfigChange(sensorId) {
-            const sensor = sensorConfig.find(s => s.id === sensorId);
+            const config = sensorConfig.find(c => c.id === sensorId);
             const minInput = document.getElementById(`min_${sensorId}`);
             const maxInput = document.getElementById(`max_${sensorId}`);
             const offsetInput = document.getElementById(`offset_${sensorId}`);
 
-            if (minInput.value === '') minInput.value = sensor.defaultMin;
-            if (maxInput.value === '') maxInput.value = sensor.defaultMax;
-            if (offsetInput.value === '') offsetInput.value = sensor.defaultOffset;
-            
-            const payload = {
+            if (minInput.value === '') minInput.value = config.defaultMin;
+            if (maxInput.value === '') maxInput.value = config.defaultMax;
+            if (offsetInput.value === '') offsetInput.value = config.defaultOffset;
+
+            const newConfig = {
                 min: parseFloat(minInput.value),
                 max: parseFloat(maxInput.value),
                 offset: parseFloat(offsetInput.value)
             };
-            
+
             fetch(`/config/${sensorId}`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload),
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error(`Falha ao atualizar a configuração para ${sensorId}`);
-                } else {
-                    console.log(`Configuração para ${sensorId} atualizada com sucesso!`);
-                }
-            })
-            .catch(error => console.error('Erro na requisição:', error));
+                body: JSON.stringify(newConfig)
+            });
         }
 
         function loadConfig() {
-            fetch('/config').then(res => res.json()).then(configData => {
-                sensorConfig.forEach(sensor => {
-                    const savedConfig = configData[sensor.id] || {};
-                    document.getElementById(`min_${sensor.id}`).value = savedConfig.min ?? sensor.defaultMin;
-                    document.getElementById(`max_${sensor.id}`).value = savedConfig.max ?? sensor.defaultMax;
-                    document.getElementById(`offset_${sensor.id}`).value = savedConfig.offset ?? sensor.defaultOffset;
+            fetch('/config')
+                .then(response => response.json())
+                .then(savedConfigs => {
+                    sensorConfig.forEach(config => {
+                        const saved = savedConfigs[config.id] || {};
+                        document.getElementById(`min_${config.id}`).value = saved.min ?? config.defaultMin;
+                        document.getElementById(`max_${config.id}`).value = saved.max ?? config.defaultMax;
+                        document.getElementById(`offset_${config.id}`).value = saved.offset ?? config.defaultOffset;
+                    });
                 });
-            });
         }
 
-        function updateData(){
-            fetch('/data').then(res => res.json()).then(data => {
-                const timestamp = new Date();
-                sensorConfig.forEach(sensor => {
-                    const dataArray = data[sensor.id];
-                    if (!dataArray) return; 
-                    
-                    const alertStatus = data[`alert_${sensor.id}`];
-                    updateCharts(charts[sensor.id], timestamp, dataArray);
-                    document.getElementById(`current_${sensor.id}`).textContent = parseFloat(dataArray.at(-1)).toFixed(2);
-                    checkAlerts(sensor.id, alertStatus);
+        function updateData() {
+            fetch('/data')
+                .then(response => response.json())
+                .then(data => {
+                    const now = new Date();
+                    sensorConfig.forEach(config => {
+                        const sensorData = data[config.id];
+                        if (!sensorData) return;
+
+                        const alertStatus = data[`alert_${config.id}`];
+                        updateCharts(charts[config.id], now, sensorData);
+                        document.getElementById(`current_${config.id}`).textContent = parseFloat(sensorData.at(-1)).toFixed(2);
+                        checkAlerts(config.id, alertStatus);
+                    });
                 });
-            });
         }
 
-        function checkAlerts(sensorId, currentStatus){
-            const alertIndicator = document.getElementById(`alert_${sensorId}`);
-            let isAlertTriggered = (currentStatus === 'on');
-            alertIndicator.classList.toggle('triggered', isAlertTriggered);
-            alertIndicator.textContent = isAlertTriggered ? 'ALERTA!' : 'NORMAL';
+        function checkAlerts(sensorId, alertValue) {
+            const indicator = document.getElementById(`alert_${sensorId}`);
+            let isTriggered = (alertValue === 'on');
+            indicator.classList.toggle('triggered', isTriggered);
+            indicator.textContent = isTriggered ? 'ALERTA!' : 'NORMAL';
         }
 
-        function updateCharts(chart, lastTimestamp, newDataArray) {
+        function updateCharts(chart, currentTime, dataPoints) {
             const newLabels = [];
-            const dataLength = newDataArray.length;
+            const dataLength = dataPoints.length;
             for (let i = 0; i < dataLength; i++) {
-                const pointTimestamp = new Date(lastTimestamp.getTime() - (dataLength - 1 - i) * fetchInterval);
-                newLabels.push(pointTimestamp.toLocaleTimeString('pt-BR'));
+                const time = new Date(currentTime.getTime() - (dataLength - 1 - i) * fetchInterval);
+                newLabels.push(time.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }));
             }
             chart.data.labels = newLabels;
-            chart.data.datasets[0].data = newDataArray;
+            chart.data.datasets[0].data = dataPoints;
             chart.update('none');
         }
 
-        initializeDashboard();
-        loadConfig(); 
-        updateData(); 
-        setInterval(updateData, fetchInterval);
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDashboard();
+            loadConfig();
+            updateData();
+            setInterval(updateData, fetchInterval);
+        });
     </script>
 </body>
+
 </html>
