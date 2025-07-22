@@ -81,7 +81,7 @@
 
     <h1>DogAtmos - EmbarcaTech</h1>
     <div id='main-content' class='main-content'>
-        </div>
+    </div>
     
     <div style='text-align: center; max-width: 1200px; margin: 40px auto 20px;'>
         <hr style='border: 0; height: 1px; background-color: #ddd;'>
@@ -93,19 +93,19 @@
         const sensorConfig = [
             {
                 id: 'AHT20_temperature', sensorName: 'AHT20', label: 'Temperatura', unit: '°C',
-                color: [255, 99, 132], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30'
+                color: [255, 99, 132], defaultMin: 0, defaultMax: 40, defaultOffset: 0
             },
             {
                 id: 'AHT20_humidity', sensorName: 'AHT20', label: 'Umidade', unit: '%',
-                color: [54, 162, 235], placeholderMin: 'Ex: 40', placeholderMax: 'Ex: 70'
+                color: [54, 162, 235], defaultMin: 30, defaultMax: 80, defaultOffset: 0
             },
             {
-                id: 'BMP280_pressure', sensorName: 'BMP280', label: 'Pressão', unit: 'hPa',
-                color: [75, 192, 192], placeholderMin: 'Ex: 1000', placeholderMax: 'Ex: 1020'
+                id: 'BMP280_pressure', sensorName: 'BMP280', label: 'Pressão', unit: 'kPa',
+                color: [75, 192, 192], defaultMin: 90, defaultMax: 110, defaultOffset: 0
             },
             {
                 id: 'BMP280_temperature', sensorName: 'BMP280', label: 'Temperatura', unit: '°C',
-                color: [255, 159, 64], placeholderMin: 'Ex: 10', placeholderMax: 'Ex: 30'
+                color: [255, 159, 64], defaultMin: 0, defaultMax: 40, defaultOffset: 0
             }
         ];
 
@@ -124,17 +124,19 @@
                         </div>
                         <div class='sensor-info'>
                             <div class='info-item'><p>Valor Atual: <span id='current_${sensor.id}'>--</span> ${sensor.unit}</p></div>
-                            <div class='input-group'><label for='min_${sensor.id}'>Limite Mínimo:</label><input type='number' id='min_${sensor.id}' placeholder='${sensor.placeholderMin}'></div>
-                            <div class='input-group'><label for='max_${sensor.id}'>Limite Máximo:</label><input type='number' id='max_${sensor.id}' placeholder='${sensor.placeholderMax}'></div>
-                            <div class='input-group'><label for='offset_${sensor.id}'>Offset de Calibração:</label><input type='number' id='offset_${sensor.id}' value='0'></div>
-                            <div class='alert-status-container'>
-                                <label>Status do Alerta:</label>
-                                <div id='alert_${sensor.id}' class='alert-indicator'>NORMAL</div>
-                            </div>
+                            <div class='input-group'><label for='min_${sensor.id}'>Limite Mínimo:</label><input type='number' id='min_${sensor.id}' value='${sensor.defaultMin}'></div>
+                            <div class='input-group'><label for='max_${sensor.id}'>Limite Máximo:</label><input type='number' id='max_${sensor.id}' value='${sensor.defaultMax}'></div>
+                            <div class='input-group'><label for='offset_${sensor.id}'>Offset de Calibração:</label><input type='number' id='offset_${sensor.id}' value='${sensor.defaultOffset}'></div>
+                            <div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_${sensor.id}' class='alert-indicator'>NORMAL</div></div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
                 container.insertAdjacentHTML('beforeend', sensorHtml);
+
+                ['min', 'max', 'offset'].forEach(type => {
+                    const inputElement = document.getElementById(`${type}_${sensor.id}`);
+                    inputElement.addEventListener('change', () => handleConfigChange(sensor.id));
+                });
+
 
                 const [r, g, b] = sensor.color;
                 charts[sensor.id] = new Chart(document.getElementById(`${sensor.id}_chart`).getContext('2d'), {
@@ -164,8 +166,42 @@
             });
         }
 
-        function sendInputs(){
-            // Função para enviar os inputs do usuário para a BitDogLab
+        function handleConfigChange(sensorId, event) {
+            const sensor = sensorConfig.find(s => s.id === sensorId);
+            const inputElement = event.target;
+            const configType = inputElement.id.split('_')[0]; 
+
+            if (inputElement.value === '') {
+                const defaultValue = sensor[`default${configType.charAt(0).toUpperCase() + configType.slice(1)}`]; 
+                inputElement.value = defaultValue;
+            }
+            const minVal = document.getElementById(`min_${sensorId}`).value;
+            const maxVal = document.getElementById(`max_${sensorId}`).value;
+            const offsetVal = document.getElementById(`offset_${sensorId}`).value;
+            const payload = {
+                [sensorId]: {
+                    min: parseFloat(minVal),
+                    max: parseFloat(maxVal),
+                    offset: parseFloat(offsetVal)
+                }
+            };
+            fetch('/config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+            })
+        }
+        function loadConfig() {
+            fetch('/config').then(res => res.json()).then(configData => {
+                sensorConfig.forEach(sensor => {
+                    const savedConfig = configData[sensor.id] || {};
+                    document.getElementById(`min_${sensor.id}`).value = savedConfig.min ?? sensor.defaultMin;
+                    document.getElementById(`max_${sensor.id}`).value = savedConfig.max ?? sensor.defaultMax;
+                    document.getElementById(`offset_${sensor.id}`).value = savedConfig.offset ?? sensor.defaultOffset;
+                });
+            })
         }
 
         function updateData(){
@@ -201,6 +237,7 @@
         }
 
         initializeDashboard();
+        loadConfig(); 
         updateData(); 
         setInterval(updateData, fetchInterval);
     </script>

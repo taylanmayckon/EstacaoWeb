@@ -63,7 +63,6 @@ const char HTML_BODY[] =
     "<!DOCTYPE html><html lang='pt-br'><head><meta charset='UTF-8'>"
     "<meta name='viewport' content='width=device-width, initial-scale=1.0'>"
     "<title>DogAtmos - EmbarcaTech</title>"
-
     "<style>"
     "body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;margin:0;padding:20px;background-color:#f0f2f5;color:#333}"
     "h1{text-align:center;color:#1e3a5f;margin-bottom:30px}"
@@ -78,37 +77,29 @@ const char HTML_BODY[] =
     ".info-item span{font-weight:400;color:#007bff}"
     ".input-group label,.alert-status-container label{display:block;margin-bottom:5px;font-weight:500}"
     ".input-group input{width:100%;padding:8px;border:1px solid #ced4da;border-radius:4px;box-sizing:border-box}"
-    ".alert-indicator{padding:10px;border-radius:8px;text-align:center;font-weight:bold;color:white;background-color:#4CAF50;transition:background-color 0.3s ease,opacity 0.3s ease}"
+    ".alert-indicator{padding:10px;border-radius:8px;text-align:center;font-weight:bold;color:white;background-color:#4CAF50;transition:background-color .3s ease,opacity .3s ease}"
     ".alert-indicator.triggered{background-color:#f44336;animation:blink 1.2s infinite ease-in-out}"
-    "@keyframes blink{50%{opacity:0.7}}"
+    "@keyframes blink{50%{opacity:.7}}"
     "</style>"
-
-    "<script src='https://cdn.jsdelivr.net/npm/chart.js'></script></head>"
-
-    "<body><h1>DogAtmos - EmbarcaTech</h1>"
+    "<script src='https://cdn.jsdelivr.net/npm/chart.js'></script>"
+    "</head><body>"
+    "<h1>DogAtmos - EmbarcaTech</h1>"
     "<div id='main-content' class='main-content'></div>"
     "<div style='text-align:center;max-width:1200px;margin:40px auto 20px;'>"
     "<hr style='border:0;height:1px;background-color:#ddd;'>"
     "<h3>Desenvolvido por: Taylan Mayckon</h3>"
     "<p>Atividade da Fase 2 do EmbarcaTech, envolvendo uso dos sensores BMP280 e AHT20 para criar uma estação meteorológica com interface WEB.</p>"
     "</div>"
-
     "<script>"
-    "const sensorConfig=[{id:'AHT20_temperature',sensorName:'AHT20',label:'Temperatura',unit:'°C',color:[255,99,132],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'},{id:'AHT20_humidity',sensorName:'AHT20',label:'Umidade',unit:'%',color:[54,162,235],placeholderMin:'Ex: 40',placeholderMax:'Ex: 70'},{id:'BMP280_pressure',sensorName:'BMP280',label:'Pressão',unit:'hPa',color:[75,192,192],placeholderMin:'Ex: 1000',placeholderMax:'Ex: 1020'},{id:'BMP280_temperature',sensorName:'BMP280',label:'Temperatura',unit:'°C',color:[255,159,64],placeholderMin:'Ex: 10',placeholderMax:'Ex: 30'}];"
+    "const sensorConfig=[{id:'AHT20_temperature',sensorName:'AHT20',label:'Temperatura',unit:'°C',color:[255,99,132],defaultMin:0,defaultMax:40,defaultOffset:0},{id:'AHT20_humidity',sensorName:'AHT20',label:'Umidade',unit:'%',color:[54,162,235],defaultMin:30,defaultMax:80,defaultOffset:0},{id:'BMP280_pressure',sensorName:'BMP280',label:'Pressão',unit:'kPa',color:[75,192,192],defaultMin:90,defaultMax:110,defaultOffset:0},{id:'BMP280_temperature',sensorName:'BMP280',label:'Temperatura',unit:'°C',color:[255,159,64],defaultMin:0,defaultMax:40,defaultOffset:0}];"
     "const charts={};const fetchInterval=2000;"
-    "function initializeDashboard(){const t=document.getElementById('main-content');sensorConfig.forEach(e=>{const n=\""
-    "<div class='sensor-row'><div class='chart-container'><h2>\"+e.sensorName+\" - \"+e.label+\"</h2><canvas id='\"+e.id+\"_chart'></canvas></div>"
-    "<div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+e.id+\"'>--</span> \"+e.unit+\"</p></div>"
-    "<div class='input-group'><label for='min_\"+e.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+e.id+\"' placeholder='\"+e.placeholderMin+\"'></div>"
-    "<div class='input-group'><label for='max_\"+e.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+e.id+\"' placeholder='\"+e.placeholderMax+\"'></div>"
-    "<div class='input-group'><label for='offset_\"+e.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+e.id+\"' value='0'></div>"
-    "<div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+e.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>"
-    "\";t.insertAdjacentHTML('beforeend',n);const[o,a,r]=e.color;charts[e.id]=new Chart(document.getElementById(e.id+'_chart').getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:e.label,data:[],borderColor:'rgba('+o+','+a+','+r+',1)',backgroundColor:'rgba('+o+','+a+','+r+',0.2)',borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:e.label+' ['+e.unit+']'},beginAtZero:!1}},animation:{duration:500}}})})}"
-    "function sendInputs(){}"
-    "function updateData(){fetch('/data').then(e=>e.json()).then(e=>{const t=new Date;sensorConfig.forEach(o=>{const n=e[o.id],a=e['alert_'+o.id];updateCharts(charts[o.id],t,n),document.getElementById('current_'+o.id).textContent=parseFloat(n.at(-1)).toFixed(2),checkAlerts(o.id,a)})})}"
-    "function checkAlerts(e,t){const o=document.getElementById('alert_'+e);let n='on'===t;o.classList.toggle('triggered',n),o.textContent=n?'ALERTA!':'NORMAL'}"
-    "function updateCharts(e,t,o){const n=[];const a=o.length;for(let r=0;r<a;r++){const s=new Date(t.getTime()-(a-1-r)*fetchInterval);n.push(s.toLocaleTimeString('pt-BR'))}e.data.labels=n,e.data.datasets[0].data=o,e.update('none')}"
-    "initializeDashboard();updateData();setInterval(updateData,fetchInterval);"
+    "function initializeDashboard(){const t=document.getElementById('main-content');sensorConfig.forEach(e=>{const n=\"<div class='sensor-row'><div class='chart-container'><h2>\"+e.sensorName+\" - \"+e.label+\"</h2><canvas id='\"+e.id+\"_chart'></canvas></div><div class='sensor-info'><div class='info-item'><p>Valor Atual: <span id='current_\"+e.id+\"'>--</span> \"+e.unit+\"</p></div><div class='input-group'><label for='min_\"+e.id+\"'>Limite Mínimo:</label><input type='number' id='min_\"+e.id+\"' value='\"+e.defaultMin+\"'></div><div class='input-group'><label for='max_\"+e.id+\"'>Limite Máximo:</label><input type='number' id='max_\"+e.id+\"' value='\"+e.defaultMax+\"'></div><div class='input-group'><label for='offset_\"+e.id+\"'>Offset de Calibração:</label><input type='number' id='offset_\"+e.id+\"' value='\"+e.defaultOffset+\"'></div><div class='alert-status-container'><label>Status do Alerta:</label><div id='alert_\"+e.id+\"' class='alert-indicator'>NORMAL</div></div></div></div>\";t.insertAdjacentHTML('beforeend',n);['min','max','offset'].forEach(t=>{document.getElementById(t+\"_\"+e.id).addEventListener('change',t=>handleConfigChange(e.id,t))});const[o,a,s]=e.color;charts[e.id]=new Chart(document.getElementById(e.id+\"_chart\").getContext('2d'),{type:'line',data:{labels:[],datasets:[{label:e.label,data:[],borderColor:\"rgba(\"+o+\",\"+a+\",\"+s+\",1)\",backgroundColor:\"rgba(\"+o+\",\"+a+\",\"+s+\",0.2)\",borderWidth:2,fill:!0,tension:.4}]},options:{responsive:!0,maintainAspectRatio:!1,scales:{x:{title:{display:!0,text:'Tempo'}},y:{title:{display:!0,text:e.label+\" [\"+e.unit+\"]\"},beginAtZero:!1}},animation:{duration:500}}})})}"
+    "function handleConfigChange(e,t){const n=sensorConfig.find(t=>t.id===e),o=t.target,a=o.id.split('_')[0];if(''===o.value){const e=n[\"default\"+a.charAt(0).toUpperCase()+a.slice(1)];o.value=e}const s=document.getElementById(\"min_\"+e).value,i=document.getElementById(\"max_\"+e).value,d=document.getElementById(\"offset_\"+e).value,l={[e]:{min:parseFloat(s),max:parseFloat(i),offset:parseFloat(d)}};fetch('/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(l)})}"
+    "function loadConfig(){fetch('/config').then(e=>e.json()).then(t=>{sensorConfig.forEach(e=>{const n=t[e.id]||{};document.getElementById(\"min_\"+e.id).value=n.min??e.defaultMin;document.getElementById(\"max_\"+e.id).value=n.max??e.defaultMax;document.getElementById(\"offset_\"+e.id).value=n.offset??e.defaultOffset})})}"
+    "function updateData(){fetch('/data').then(e=>e.json()).then(t=>{const n=new Date;sensorConfig.forEach(e=>{const o=t[e.id],a=t[\"alert_\"+e.id];updateCharts(charts[e.id],n,o),document.getElementById(\"current_\"+e.id).textContent=parseFloat(o.at(-1)).toFixed(2),checkAlerts(e.id,a)})})}"
+    "function checkAlerts(e,t){const n=document.getElementById(\"alert_\"+e);let o='on'===t;n.classList.toggle('triggered',o),n.textContent=o?'ALERTA!':'NORMAL'}"
+    "function updateCharts(e,t,n){const o=[];const a=n.length;for(let s=0;s<a;s++){const i=new Date(t.getTime()-(a-1-s)*fetchInterval);o.push(i.toLocaleTimeString('pt-BR'))}e.data.labels=o,e.data.datasets[0].data=n,e.update('none')}"
+    "initializeDashboard();loadConfig();updateData();setInterval(updateData,fetchInterval);"
     "</script>"
     "</body></html>";
 
@@ -159,6 +150,7 @@ static err_t http_recv(void *arg, struct tcp_pcb *tpcb, struct pbuf *p, err_t er
         int json_len = payload_generate_json(json_payload, sensor_alerts, &AHT20_buffer, &BMP280_buffer, payload_sizes);
 
         // Debug 
+        printf("[DEBUG] GET /data\n");
         if (json_len > 0 && json_len < sizeof(json_payload)) {
             printf("JSON gerado com sucesso (%d bytes):\n", json_len);
             printf("%s\n", json_payload);
@@ -226,22 +218,6 @@ int main(){
     stdio_init_all();
     sleep_ms(2000);
 
-    // Iniciando o I2C dos sensores
-    i2c_init(I2C_PORT_DISP, 400 * 1000);
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-
-    // Inicializando o BMP280
-    bmp280_init(I2C_PORT);
-    struct bmp280_calib_param params;
-    bmp280_get_calib_params(I2C_PORT, &params);
-
-    // Inicializando o AHT20
-    aht20_reset(I2C_PORT);
-    aht20_init(I2C_PORT);
-
     // Iniciando o display
     i2c_init(I2C_PORT_DISP, 400 * 1000);
     gpio_set_function(I2C_SDA_DISP, GPIO_FUNC_I2C);
@@ -256,6 +232,22 @@ int main(){
     ssd1306_draw_string(&ssd, "Iniciando Wi-Fi", 0, 0, false);
     ssd1306_draw_string(&ssd, "Aguarde...", 0, 30, false);    
     ssd1306_send_data(&ssd);
+
+    // Iniciando o I2C dos sensores
+    i2c_init(I2C_PORT, 400 * 1000);
+    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+    gpio_pull_up(I2C_SDA);
+    gpio_pull_up(I2C_SCL);
+
+    // Inicializando o BMP280
+    bmp280_init(I2C_PORT);
+    struct bmp280_calib_param params;
+    bmp280_get_calib_params(I2C_PORT, &params);
+
+    // Inicializando o AHT20
+    aht20_reset(I2C_PORT);
+    aht20_init(I2C_PORT);
 
     // Iniciando Wi-Fi
     if (cyw43_arch_init()){
@@ -290,9 +282,34 @@ int main(){
     while (true){
         cyw43_arch_poll();
 
-        
+        // Leitura do BMP280
+        bmp280_read_raw(I2C_PORT, &raw_temp_bmp, &raw_pressure);
+        int32_t temperature = bmp280_convert_temp(raw_temp_bmp, &params);
+        int32_t pressure = bmp280_convert_pressure(raw_pressure, raw_temp_bmp, &params);
 
-        sleep_ms(300);
+        BMP280_data.pressure = pressure/1000.0f;
+        BMP280_data.temperature = temperature/100.0f;
+
+        printf("[DEBUG] Leitura de sensores\n");
+        printf("BMP280.pressure = %.3f kPa\n", BMP280_data.pressure);
+        printf("BMP280.temperature = %.2f C\n", BMP280_data.temperature);
+
+        // Leitura do AHT20
+        if (aht20_read(I2C_PORT, &AHT20_data)){
+            printf("AHT20_data.temperature = %.2f C\n", AHT20_data.temperature);
+            printf("AHT20_data.humidity = %.2f %%\n", AHT20_data.humidity);
+        }
+        else{
+            printf("Erro na leitura do AHT10!\n");
+        }
+
+        // Atualizando os dados dos buffers
+        payload_buffers_update(AHT20_data, BMP280_data, &AHT20_buffer, &BMP280_buffer);
+
+
+        printf("\n\n");
+
+        sleep_ms(2000);
     }
 
     cyw43_arch_deinit();

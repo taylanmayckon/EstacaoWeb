@@ -90,3 +90,12 @@ int payload_generate_json(char *json_buffer, Sensor_alerts_t sensor_alerts, AHT2
 
     return offset;
 }
+
+
+int payload_generate_config(char *json_buffer, size_t json_size, AlertParams_t alert_params){
+    int offset = 0;
+
+    
+
+    return offset;
+};

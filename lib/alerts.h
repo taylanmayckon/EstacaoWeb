@@ -11,4 +11,17 @@ typedef struct {
     bool bmp280_temperature;
 } Sensor_alerts_t;
 
+typedef struct{
+    float min;
+    float max;
+    float offset;
+} ConfigParams_t;
+
+typedef struct{
+    ConfigParams_t AHT20_temperature;
+    ConfigParams_t AHT20_humidity;
+    ConfigParams_t BMP280_pressure;
+    ConfigParams_t BMP280_temperature;
+} AlertParams_t;
+
 #endif
